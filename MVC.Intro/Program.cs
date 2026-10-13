@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MVC.Intro.Data;
+using MVC.Intro.Models;
 using MVC.Intro.Services;
 
 namespace MVC.Intro
@@ -16,9 +18,10 @@ namespace MVC.Intro
             var dbPath = Path.Combine(dataDir, "scooters.db");
 
             builder.Services.AddControllersWithViews();
-            builder.Services.AddTransient<ProductService>();
+            builder.Services.AddScoped<ProductService>();
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite($"Data Source={dbPath}"));
+            builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
             builder.Services
                 .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

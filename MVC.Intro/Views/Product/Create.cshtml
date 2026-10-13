@@ -7,7 +7,7 @@
 <hr />
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="CreateProduct">
+        <form asp-action="Create" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="mb-3">
                 <label asp-for="Name" class="form-label"></label>
@@ -33,6 +33,10 @@
                 <label asp-for="MaxSpeedKmh" class="form-label"></label>
                 <input asp-for="MaxSpeedKmh" class="form-control" />
                 <span asp-validation-for="MaxSpeedKmh" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Снимка</label>
+                <input type="file" name="imageFile" class="form-control" accept="image/*" />
             </div>
             <button type="submit" class="btn btn-warning">Запази</button>
             <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>

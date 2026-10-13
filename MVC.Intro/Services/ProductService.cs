@@ -1,11 +1,11 @@
-﻿using MVC.Intro.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using MVC.Intro.Data;
 using MVC.Intro.Models;
 
 namespace MVC.Intro.Services
 {
     public class ProductService
     {
-        private const string ProductPrefix = "PRD_";
         private readonly ILogger<ProductService> _logger;
         private readonly AppDbContext _context;
 
@@ -15,9 +15,19 @@ namespace MVC.Intro.Services
             _context = context;
         }
 
+        public async Task<List<Product>> GetAllProductsAsync()
+        {
+            return await _context.Products.ToListAsync();
+        }
+
         public List<Product> GetAllProducts()
         {
             return _context.Products.ToList();
+        }
+
+        public async Task<Product?> GetProductByIdAsync(Guid id)
+        {
+            return await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public Product GetProductById(Guid id)
@@ -25,9 +35,34 @@ namespace MVC.Intro.Services
             var product = _context.Products.FirstOrDefault(p => p.Id == id);
             if (product == null)
             {
-                throw new ArgumentNullException("Product not found");
+                throw new KeyNotFoundException($"Product with ID {id} not found");
             }
             return product;
+        }
+
+        public async Task<Product> AddProductAsync(Product product)
+        {
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            var toAdd = new Product
+            {
+                Id = Guid.NewGuid(),
+                Name = product.Name,
+                Price = product.Price,
+                Description = product.Description,
+                RangeKm = product.RangeKm,
+                MaxSpeedKmh = product.MaxSpeedKmh,
+                ImageUrl = product.ImageUrl
+            };
+
+            _logger.LogInformation("Adding product: {ProductName} with price {ProductPrice}", toAdd.Name, toAdd.Price);
+
+            _context.Products.Add(toAdd);
+            await _context.SaveChangesAsync();
+            return toAdd;
         }
 
         public Product AddProduct(Product product)
@@ -44,7 +79,8 @@ namespace MVC.Intro.Services
                 Price = product.Price,
                 Description = product.Description,
                 RangeKm = product.RangeKm,
-                MaxSpeedKmh = product.MaxSpeedKmh
+                MaxSpeedKmh = product.MaxSpeedKmh,
+                ImageUrl = product.ImageUrl
             };
 
             _logger.LogInformation("Adding product: {ProductName} with price {ProductPrice}", toAdd.Name, toAdd.Price);
@@ -54,21 +90,28 @@ namespace MVC.Intro.Services
             return toAdd;
         }
 
+        public async Task DeleteProductAsync(Guid id)
+        {
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null)
+            {
+                throw new KeyNotFoundException($"Product with ID {id} not found");
+            }
+
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
+        }
+
         public void DeleteProduct(Guid id)
         {
             var product = _context.Products.FirstOrDefault(p => p.Id == id);
             if (product == null)
             {
-                throw new ArgumentNullException("Product not found");
+                throw new KeyNotFoundException($"Product with ID {id} not found");
             }
 
             _context.Products.Remove(product);
             _context.SaveChanges();
-        }
-
-        private void DecorateProductName(Product product)
-        {
-            product.Name = ProductPrefix + product.Name;
         }
     }
 }

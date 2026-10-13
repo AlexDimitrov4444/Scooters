@@ -30,5 +30,8 @@ namespace MVC.Intro.Models
         [DisplayName("Макс. скорост (км/ч)")]
         [Range(5, 80, ErrorMessage = "Скоростта трябва да е между 5 и 80 км/ч")]
         public int MaxSpeedKmh { get; set; }
+
+        [DisplayName("Снимка")]
+        public string? ImageUrl { get; set; }
     }
 }

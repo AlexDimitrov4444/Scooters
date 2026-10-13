@@ -17,7 +17,8 @@ namespace MVC.Intro.Data
                         Price = 649.99m,
                         Description = "Лека градска тротинетка за ежедневно придвижване.",
                         RangeKm = 25,
-                        MaxSpeedKmh = 25
+                        MaxSpeedKmh = 25,
+                        ImageUrl = "/images/G2-1200x1200.jpg"
                     },
                     new Product
                     {

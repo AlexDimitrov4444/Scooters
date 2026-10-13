@@ -5,7 +5,16 @@
 
 <div class="card scooter-card">
     <div class="row g-0">
-        <div class="col-md-4 scooter-visual-lg">🛴</div>
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div class="col-md-4">
+                <img src="@Model.ImageUrl" class="img-fluid rounded-start h-100" alt="@Model.Name" style="object-fit: cover;">
+            </div>
+        }
+        else
+        {
+            <div class="col-md-4 scooter-visual-lg">🛴</div>
+        }
         <div class="col-md-8">
             <div class="card-body">
                 <h1 class="h3">@Model.Name</h1>

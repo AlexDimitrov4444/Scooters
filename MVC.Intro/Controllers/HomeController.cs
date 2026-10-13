@@ -14,9 +14,10 @@ namespace MVC.Intro.Controllers
             _productService = productService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View(_productService.GetAllProducts());
+            var products = await _productService.GetAllProductsAsync();
+            return View(products);
         }
 
         public IActionResult Privacy()

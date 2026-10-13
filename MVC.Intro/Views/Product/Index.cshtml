@@ -20,7 +20,14 @@
     {
         <div class="col-md-6 col-lg-4">
             <div class="card scooter-card h-100">
-                <div class="scooter-visual">⚡🛴</div>
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
+                }
+                else
+                {
+                    <div class="scooter-visual">⚡🛴</div>
+                }
                 <div class="card-body">
                     <h2 class="h5">@item.Name</h2>
                     <p class="text-muted">@item.Description</p>

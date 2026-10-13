@@ -9,21 +9,29 @@ namespace MVC.Intro.Controllers
     public class ProductController : Controller
     {
         private readonly ProductService _productService;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(ProductService productService)
+        public ProductController(ProductService productService, IWebHostEnvironment webHostEnvironment)
         {
             _productService = productService;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View(_productService.GetAllProducts());
+            var products = await _productService.GetAllProductsAsync();
+            return View(products);
         }
 
         [HttpGet("{id}")]
-        public IActionResult Details(Guid id)
+        public async Task<IActionResult> Details(Guid id)
         {
-            return View(_productService.GetProductById(id));
+            var product = await _productService.GetProductByIdAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            return View(product);
         }
 
         [Authorize]
@@ -36,23 +44,49 @@ namespace MVC.Intro.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(Guid id)
+        public async Task<IActionResult> Create(Product product, IFormFile? imageFile)
         {
-            _productService.DeleteProduct(id);
+            if (!ModelState.IsValid)
+            {
+                return View(product);
+            }
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(fileStream);
+                }
+
+                product.ImageUrl = "/images/" + uniqueFileName;
+            }
+
+            await _productService.AddProductAsync(product);
             return RedirectToAction(nameof(Index));
         }
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateProduct(Product product)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return View("Create", product);
+                await _productService.DeleteProductAsync(id);
             }
-
-            _productService.AddProduct(product);
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
             return RedirectToAction(nameof(Index));
         }
     }

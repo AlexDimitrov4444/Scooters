@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MVC.Intro.Data;
 using MVC.Intro.Models;
 
@@ -12,11 +13,12 @@ namespace MVC.Intro.Controllers
     public class AccountController : Controller
     {
         private readonly AppDbContext _context;
-        private readonly PasswordHasher<User> _passwordHasher = new();
+        private readonly IPasswordHasher<User> _passwordHasher;
 
-        public AccountController(AppDbContext context)
+        public AccountController(AppDbContext context, IPasswordHasher<User> passwordHasher)
         {
             _context = context;
+            _passwordHasher = passwordHasher;
         }
 
         [HttpGet]
@@ -45,7 +47,8 @@ namespace MVC.Intro.Controllers
                 return View(model);
             }
 
-            var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == model.Email.ToLower());
+            var normalizedEmail = model.Email.Trim().ToLowerInvariant();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Невалиден имейл или парола.");
@@ -85,7 +88,8 @@ namespace MVC.Intro.Controllers
                 return View(model);
             }
 
-            if (_context.Users.Any(u => u.Email.ToLower() == model.Email.ToLower()))
+            var normalizedEmail = model.Email.Trim().ToLowerInvariant();
+            if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
             {
                 ModelState.AddModelError(nameof(model.Email), "Този имейл вече е регистриран.");
                 return View(model);
@@ -95,12 +99,12 @@ namespace MVC.Intro.Controllers
             {
                 Id = Guid.NewGuid(),
                 FullName = model.FullName,
-                Email = model.Email.Trim(),
+                Email = normalizedEmail,
                 PasswordHash = string.Empty
             };
             user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
             _context.Users.Add(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             await SignInUser(user, rememberMe: false);
             return RedirectToAction("Index", "Home");
