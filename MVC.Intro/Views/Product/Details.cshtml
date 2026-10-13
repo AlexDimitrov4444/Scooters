@@ -1,0 +1,25 @@
+﻿@model Product
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="card scooter-card">
+    <div class="row g-0">
+        <div class="col-md-4 scooter-visual-lg">🛴</div>
+        <div class="col-md-8">
+            <div class="card-body">
+                <h1 class="h3">@Model.Name</h1>
+                <p>@Model.Description</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Цена</dt>
+                    <dd class="col-sm-8">@Model.Price.ToString("0.00") лв.</dd>
+                    <dt class="col-sm-4">Пробег</dt>
+                    <dd class="col-sm-8">@Model.RangeKm км</dd>
+                    <dt class="col-sm-4">Макс. скорост</dt>
+                    <dd class="col-sm-8">@Model.MaxSpeedKmh км/ч</dd>
+                </dl>
+                <a class="btn btn-dark mt-3" asp-action="Index">Назад към каталога</a>
+            </div>
+        </div>
+    </div>
+</div>

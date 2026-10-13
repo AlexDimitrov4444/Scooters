@@ -1,0 +1,8 @@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <span class="text-muted">Влезли сте като @User.Identity.Name</span>
+}
+else
+{
+    <a asp-controller="Account" asp-action="Login">Вход</a>
+}

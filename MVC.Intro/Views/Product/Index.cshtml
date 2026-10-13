@@ -1,0 +1,43 @@
+﻿@model IEnumerable<Product>
+@{
+    ViewData["Title"] = "Тротинетки";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Каталог електрически тротинетки</h1>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="btn btn-warning" asp-controller="Product" asp-action="Create">Добави модел</a>
+    }
+    else
+    {
+        <a class="btn btn-outline-dark" asp-controller="Account" asp-action="Login">Влез, за да добавяш</a>
+    }
+</div>
+
+<div class="row g-4">
+    @foreach (var item in Model)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card scooter-card h-100">
+                <div class="scooter-visual">⚡🛴</div>
+                <div class="card-body">
+                    <h2 class="h5">@item.Name</h2>
+                    <p class="text-muted">@item.Description</p>
+                    <ul class="list-unstyled small">
+                        <li>Цена: <strong>@item.Price.ToString("0.00") лв.</strong></li>
+                        <li>Пробег: @item.RangeKm км</li>
+                        <li>Макс. скорост: @item.MaxSpeedKmh км/ч</li>
+                    </ul>
+                    <a class="btn btn-sm btn-dark me-2" asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-action="Delete" asp-controller="Product" asp-route-id="@item.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Изтрий</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

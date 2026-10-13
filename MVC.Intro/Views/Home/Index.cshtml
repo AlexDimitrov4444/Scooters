@@ -1,0 +1,36 @@
+﻿@model IEnumerable<Product>
+@{
+    ViewData["Title"] = "Начало";
+}
+
+<section class="hero-banner mb-5">
+    <div class="hero-copy">
+        <p class="hero-kicker">Електрическа мобилност</p>
+        <h1>VoltRide — електрически тротинетки за града</h1>
+        <p class="lead">Леки, бързи и готови за ежедневието. Разгледайте каталога или влезте, за да добавяте модели.</p>
+        <a class="btn btn-warning btn-lg me-2" asp-controller="Product" asp-action="Index">Каталог</a>
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">Вход / Sign in</a>
+        }
+    </div>
+</section>
+
+<h2 class="h4 mb-3">Популярни модели</h2>
+<div class="row g-4">
+    @foreach (var item in Model)
+    {
+        <div class="col-md-6 col-lg-3">
+            <div class="card scooter-card h-100">
+                <div class="scooter-visual">🛴</div>
+                <div class="card-body">
+                    <h3 class="h5">@item.Name</h3>
+                    <p class="text-muted small">@item.Description</p>
+                    <p class="mb-1"><strong>@item.Price.ToString("0.00") лв.</strong></p>
+                    <p class="small mb-3">@item.RangeKm км · @item.MaxSpeedKmh км/ч</p>
+                    <a class="btn btn-sm btn-dark" asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,83 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #f0b429;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 70px;
+  background: #f4f7fb;
+  color: #12202b;
+}
+
+.volt-nav {
+  background: #0b1f2a;
+}
+
+.volt-nav .navbar-brand {
+  color: #ffd166;
+}
+
+.volt-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+  background: #0b1f2a;
+  color: #c9d6df;
+}
+
+.hero-banner {
+  background: linear-gradient(135deg, #0b1f2a 0%, #1b4d4f 60%, #f0b429 140%);
+  color: #fff;
+  border-radius: 1.25rem;
+  padding: 3rem 2rem;
+}
+
+.hero-kicker {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.scooter-card {
+  border: none;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(11, 31, 42, 0.08);
+}
+
+.scooter-visual,
+.scooter-visual-lg {
+  background: linear-gradient(160deg, #12343b, #f0b429);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  min-height: 140px;
+}
+
+.scooter-visual-lg {
+  min-height: 280px;
+  font-size: 5rem;
+}
+
+.auth-card {
+  border: none;
+  border-radius: 1rem;
+}

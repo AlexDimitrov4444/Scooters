@@ -1,0 +1,45 @@
+﻿@model Product
+@{
+    ViewData["Title"] = "Нов модел";
+}
+
+<h1>Добави електрическа тротинетка</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="CreateProduct">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Price" class="form-label"></label>
+                <input asp-for="Price" class="form-control" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="RangeKm" class="form-label"></label>
+                <input asp-for="RangeKm" class="form-control" />
+                <span asp-validation-for="RangeKm" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="MaxSpeedKmh" class="form-label"></label>
+                <input asp-for="MaxSpeedKmh" class="form-control" />
+                <span asp-validation-for="MaxSpeedKmh" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-warning">Запази</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
