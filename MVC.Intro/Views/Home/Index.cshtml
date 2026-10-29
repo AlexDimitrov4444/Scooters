@@ -22,13 +22,41 @@
     {
         <div class="col-md-6 col-lg-3">
             <div class="card scooter-card h-100">
-                <div class="scooter-visual">🛴</div>
+                <div style="height: 200px; overflow: hidden; background: #f5f5f5; position: relative;">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        <img src="@item.ImageUrl" alt="@item.Name"
+                             style="width: 100%; height: 200px; object-fit: cover; object-position: center; display: block;">
+                    }
+                    else
+                    {
+                        <div class="scooter-visual" style="height: 200px; display: flex; align-items: center; justify-content: center; font-size: 3rem;">🛴</div>
+                    }
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-controller="Product" asp-action="UploadImage" asp-route-id="@item.Id"
+                              method="post" enctype="multipart/form-data"
+                              style="position: absolute; bottom: 8px; right: 8px;">
+                            <label style="cursor: pointer; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; margin: 0;">
+                                📷 Смени снимка
+                                <input type="file" name="imageFile" accept="image/*"
+                                       style="display:none;"
+                                       onchange="this.closest('form').submit()">
+                            </label>
+                        </form>
+                    }
+                </div>
                 <div class="card-body">
                     <h3 class="h5">@item.Name</h3>
                     <p class="text-muted small">@item.Description</p>
                     <p class="mb-1"><strong>@item.Price.ToString("0.00") лв.</strong></p>
                     <p class="small mb-3">@item.RangeKm км · @item.MaxSpeedKmh км/ч</p>
-                    <a class="btn btn-sm btn-dark" asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                    <a class="btn btn-sm btn-dark me-1" asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a class="btn btn-sm btn-warning" asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">Редакция</a>
+                    }
                 </div>
             </div>
         </div>

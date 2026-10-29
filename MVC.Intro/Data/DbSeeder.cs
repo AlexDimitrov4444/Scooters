@@ -27,7 +27,8 @@ namespace MVC.Intro.Data
                         Price = 899.99m,
                         Description = "По-мощен мотор и по-дълъг пробег за пътуване до работа.",
                         RangeKm = 40,
-                        MaxSpeedKmh = 32
+                        MaxSpeedKmh = 32,
+                        ImageUrl = "/images/Бърз скутер.jfif"
                     },
                     new Product
                     {
@@ -36,7 +37,8 @@ namespace MVC.Intro.Data
                         Price = 1299.99m,
                         Description = "Двойно окачване и здрава рамка за по-дълги маршрути.",
                         RangeKm = 55,
-                        MaxSpeedKmh = 40
+                        MaxSpeedKmh = 40,
+                        ImageUrl = "/images/Скоростна тротинетка.jfif"
                     },
                     new Product
                     {
@@ -45,7 +47,8 @@ namespace MVC.Intro.Data
                         Price = 499.99m,
                         Description = "Сгъваем модел, удобен за обществен транспорт.",
                         RangeKm = 18,
-                        MaxSpeedKmh = 20
+                        MaxSpeedKmh = 20,
+                        ImageUrl = "/images/Ел. Тротинетка.jfif"
                     });
             }
 

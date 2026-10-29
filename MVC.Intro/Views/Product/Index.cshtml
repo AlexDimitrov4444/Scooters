@@ -39,6 +39,7 @@
                     <a class="btn btn-sm btn-dark me-2" asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        <a class="btn btn-sm btn-warning me-2" asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">Редакция</a>
                         <form asp-action="Delete" asp-controller="Product" asp-route-id="@item.Id" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Изтрий</button>
                         </form>

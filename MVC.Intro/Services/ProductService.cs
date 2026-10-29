@@ -90,6 +90,36 @@ namespace MVC.Intro.Services
             return toAdd;
         }
 
+        public async Task<Product> UpdateProductAsync(Product product)
+        {
+            if (product == null)
+            {
+                throw new ArgumentNullException(nameof(product));
+            }
+
+            var existing = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id);
+            if (existing == null)
+            {
+                throw new KeyNotFoundException($"Product with ID {product.Id} not found");
+            }
+
+            existing.Name = product.Name;
+            existing.Price = product.Price;
+            existing.Description = product.Description;
+            existing.RangeKm = product.RangeKm;
+            existing.MaxSpeedKmh = product.MaxSpeedKmh;
+
+            if (product.ImageUrl != null)
+            {
+                existing.ImageUrl = product.ImageUrl;
+            }
+
+            _logger.LogInformation("Updating product: {ProductName}", existing.Name);
+
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
         public async Task DeleteProductAsync(Guid id)
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);

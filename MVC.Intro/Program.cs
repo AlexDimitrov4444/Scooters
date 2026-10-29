@@ -41,6 +41,23 @@ namespace MVC.Intro
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 db.Database.Migrate();
                 DbSeeder.Seed(db);
+
+                // Обновяване на снимките за продукти без ImageUrl
+                var imageMap = new Dictionary<string, string>
+                {
+                    { "Spark Pro 350",   "/images/Бърз скутер.jfif" },
+                    { "Thunder Max 500", "/images/Скоростна тротинетка.jfif" },
+                    { "Eco Fold 200",    "/images/Ел. Тротинетка.jfif" },
+                    { "Volt City 250",   "/images/G2-1200x1200.jpg" }
+                };
+                foreach (var product in db.Products.Where(p => p.ImageUrl == null))
+                {
+                    if (imageMap.TryGetValue(product.Name, out var url))
+                    {
+                        product.ImageUrl = url;
+                    }
+                }
+                db.SaveChanges();
             }
 
             if (!app.Environment.IsDevelopment())
