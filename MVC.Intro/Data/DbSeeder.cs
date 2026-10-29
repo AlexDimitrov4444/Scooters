@@ -3,22 +3,26 @@ using MVC.Intro.Models;
 
 namespace MVC.Intro.Data
 {
+    // DbSeeder се използва за първоначално зареждане на данни в базата
+    // Изпълнява се само веднъж — когато таблиците са празни
     public static class DbSeeder
     {
         public static void Seed(AppDbContext context)
         {
+            // Проверяваме дали вече има продукти — ако има, не добавяме нови
             if (!context.Products.Any())
             {
+                // Добавяме примерни тротинетки с начални данни
                 context.Products.AddRange(
                     new Product
                     {
-                        Id = Guid.NewGuid(),
+                        Id = Guid.NewGuid(),           // Генерираме уникален ID
                         Name = "Volt City 250",
                         Price = 649.99m,
                         Description = "Лека градска тротинетка за ежедневно придвижване.",
                         RangeKm = 25,
                         MaxSpeedKmh = 25,
-                        ImageUrl = "/images/G2-1200x1200.jpg"
+                        ImageUrl = "/images/G2-1200x1200.jpg"  // Снимка от wwwroot/images
                     },
                     new Product
                     {
@@ -52,20 +56,26 @@ namespace MVC.Intro.Data
                     });
             }
 
+            // Проверяваме дали вече има потребители — ако има, не добавяме нови
             if (!context.Users.Any())
             {
+                // Създаваме демо потребител за тестване
                 var demo = new User
                 {
                     Id = Guid.NewGuid(),
                     FullName = "Демо потребител",
                     Email = "demo@volt.bg",
-                    PasswordHash = string.Empty
+                    PasswordHash = string.Empty  // Временно празно — ще се хешира по-долу
                 };
+
+                // Хешираме паролата преди запис (никога не пазим пароли в чист текст)
                 var hasher = new PasswordHasher<User>();
                 demo.PasswordHash = hasher.HashPassword(demo, "Demo123!");
+
                 context.Users.Add(demo);
             }
 
+            // Записваме всички промени в базата данни
             context.SaveChanges();
         }
     }

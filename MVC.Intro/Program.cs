@@ -11,38 +11,56 @@ namespace MVC.Intro
     {
         public static void Main(string[] args)
         {
+            // Създаваме builder-а — той конфигурира всички услуги на приложението
             var builder = WebApplication.CreateBuilder(args);
 
+            // Определяме пътя до папката Data и файла на SQLite базата данни
             var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Data");
-            Directory.CreateDirectory(dataDir);
+            Directory.CreateDirectory(dataDir); // Създаваме папката ако не съществува
             var dbPath = Path.Combine(dataDir, "scooters.db");
 
+            // Регистрираме MVC (контролери + Razor views)
             builder.Services.AddControllersWithViews();
+
+            // Регистрираме ProductService — lifetime е Scoped (нов обект на всяка заявка)
             builder.Services.AddScoped<ProductService>();
+
+            // Конфигурираме Entity Framework Core да използва SQLite база данни
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite($"Data Source={dbPath}"));
+
+            // Регистрираме PasswordHasher за хеширане на пароли на потребители
             builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+            // Конфигурираме автентикация с бисквитки (cookie-based authentication)
             builder.Services
                 .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
-                    options.LoginPath = "/Account/Login";
-                    options.LogoutPath = "/Account/Logout";
-                    options.AccessDeniedPath = "/Account/Login";
-                    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                    options.LoginPath = "/Account/Login";           // Пренасочване при нужда от вход
+                    options.LogoutPath = "/Account/Logout";         // Път за изход
+                    options.AccessDeniedPath = "/Account/Login";    // При отказан достъп
+                    options.ExpireTimeSpan = TimeSpan.FromDays(7);  // Бисквитката важи 7 дни
                 });
+
+            // Регистрираме авторизация (проверка на права)
             builder.Services.AddAuthorization();
 
+            // Изграждаме приложението
             var app = builder.Build();
 
+            // Изпълняваме миграции и seed данни при стартиране
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                // Прилагаме всички чакащи миграции (създаваме/обновяваме таблиците)
                 db.Database.Migrate();
+
+                // Зареждаме начални данни ако базата е празна
                 DbSeeder.Seed(db);
 
-                // Обновяване на снимките за продукти без ImageUrl
+                // Обновяваме снимките за продукти без ImageUrl (еднократна корекция)
                 var imageMap = new Dictionary<string, string>
                 {
                     { "Spark Pro 350",   "/images/Бърз скутер.jfif" },
@@ -50,6 +68,8 @@ namespace MVC.Intro
                     { "Eco Fold 200",    "/images/Ел. Тротинетка.jfif" },
                     { "Volt City 250",   "/images/G2-1200x1200.jpg" }
                 };
+
+                // За всеки продукт без снимка, търсим подходяща снимка по името му
                 foreach (var product in db.Products.Where(p => p.ImageUrl == null))
                 {
                     if (imageMap.TryGetValue(product.Name, out var url))
@@ -60,29 +80,44 @@ namespace MVC.Intro
                 db.SaveChanges();
             }
 
+            // Конфигурираме middleware pipeline (редът е важен!)
+
             if (!app.Environment.IsDevelopment())
             {
+                // В production — показваме страница за грешка вместо stack trace
                 app.UseExceptionHandler("/Home/Error");
+                // HSTS — принуждава браузъра да ползва само HTTPS
                 app.UseHsts();
             }
 
+            // Пренасочваме HTTP заявките към HTTPS
             app.UseHttpsRedirection();
+
+            // Разрешаваме достъп до статични файлове (CSS, JS, снимки от wwwroot)
             app.UseStaticFiles();
 
+            // Активираме маршрутизирането
             app.UseRouting();
 
+            // Проверяваме кой е потребителят (автентикация) — трябва да е преди Authorization
             app.UseAuthentication();
+
+            // Проверяваме дали потребителят има право (авторизация)
             app.UseAuthorization();
 
+            // Основен маршрут: /Контролер/Действие/Id
+            // По подразбиране отива на Home/Index
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
+            // Допълнителен маршрут за RoutingController
             app.MapControllerRoute(
                 name: "routing",
                 pattern: "{controller=Routing}/{*default}",
                 defaults: new { controller = "Routing", action = "Default" });
 
+            // Стартираме приложението
             app.Run();
         }
     }

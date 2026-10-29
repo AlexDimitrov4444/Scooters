@@ -1,3 +1,4 @@
+@* Моделът е съществуващ продукт — зареден от базата с текущите му данни *@
 @model Product
 @{
     ViewData["Title"] = "Редакция: " + Model.Name;
@@ -7,54 +8,80 @@
 <hr />
 <div class="row">
     <div class="col-md-6">
+        @* asp-route-id подава ID-то в URL-а: /Product/Edit/{id}
+           enctype="multipart/form-data" е задължително заради качването на снимка *@
         <form asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+
+            @* Показва общи грешки (не за конкретни полета) *@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            @* Скрито поле с ID — изпраща се към контролера за да знае кой продукт редактираме *@
             <input type="hidden" asp-for="Id" />
 
+            @* Поле: Наименование *@
             <div class="mb-3">
                 <label asp-for="Name" class="form-label"></label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
+
+            @* Поле: Цена *@
             <div class="mb-3">
                 <label asp-for="Price" class="form-label"></label>
                 <input asp-for="Price" class="form-control" />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
+
+            @* Поле: Описание *@
             <div class="mb-3">
                 <label asp-for="Description" class="form-label"></label>
                 <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
+
+            @* Поле: Пробег *@
             <div class="mb-3">
                 <label asp-for="RangeKm" class="form-label"></label>
                 <input asp-for="RangeKm" class="form-control" />
                 <span asp-validation-for="RangeKm" class="text-danger"></span>
             </div>
+
+            @* Поле: Максимална скорост *@
             <div class="mb-3">
                 <label asp-for="MaxSpeedKmh" class="form-label"></label>
                 <input asp-for="MaxSpeedKmh" class="form-control" />
                 <span asp-validation-for="MaxSpeedKmh" class="text-danger"></span>
             </div>
+
+            @* Секция за снимката *@
             <div class="mb-3">
                 <label class="form-label">Снимка</label>
+
+                @* Ако продуктът вече има снимка — показваме я като preview *@
                 @if (!string.IsNullOrEmpty(Model.ImageUrl))
                 {
                     <div class="mb-2">
-                        <img src="@Model.ImageUrl" alt="@Model.Name" style="max-height: 150px; object-fit: cover;" class="img-thumbnail" />
+                        @* Миниатюра на текущата снимка *@
+                        <img src="@Model.ImageUrl" alt="@Model.Name"
+                             style="max-height: 150px; object-fit: cover;" class="img-thumbnail" />
                         <div class="form-text">Качете нова снимка, за да замените текущата.</div>
                     </div>
+                    @* Запазваме текущия URL в скрито поле — ако не качим нова снимка, старата остава *@
                     <input type="hidden" asp-for="ImageUrl" />
                 }
+
+                @* File input за качване на нова снимка (незадължително) *@
                 <input type="file" name="imageFile" class="form-control" accept="image/*" />
             </div>
 
+            @* Бутони за запис и отказ *@
             <button type="submit" class="btn btn-warning">Запази промените</button>
             <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
         </form>
     </div>
 </div>
 
+@* Client-side валидация *@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

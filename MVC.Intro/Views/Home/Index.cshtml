@@ -1,14 +1,20 @@
-﻿@model IEnumerable<Product>
+﻿@* Моделът е колекция от продукти — подава се от HomeController.Index() *@
+@model IEnumerable<Product>
 @{
     ViewData["Title"] = "Начало";
 }
 
+@* Герой банер — голям уводен блок на началната страница *@
 <section class="hero-banner mb-5">
     <div class="hero-copy">
         <p class="hero-kicker">Електрическа мобилност</p>
         <h1>VoltRide — електрически тротинетки за града</h1>
         <p class="lead">Леки, бързи и готови за ежедневието. Разгледайте каталога или влезте, за да добавяте модели.</p>
+
+        @* Бутон към пълния каталог *@
         <a class="btn btn-warning btn-lg me-2" asp-controller="Product" asp-action="Index">Каталог</a>
+
+        @* Бутонът за вход се показва само ако потребителят НЕ е влязъл *@
         @if (User.Identity?.IsAuthenticated != true)
         {
             <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">Вход / Sign in</a>
@@ -17,33 +23,47 @@
 </section>
 
 <h2 class="h4 mb-3">Популярни модели</h2>
+
+@* Решетка с карти — Bootstrap grid, 4 колони на голям екран *@
 <div class="row g-4">
+    @* Обхождаме всеки продукт и генерираме карта *@
     @foreach (var item in Model)
     {
         <div class="col-md-6 col-lg-3">
             <div class="card scooter-card h-100">
 
-                @* Снимка с фиксирана височина *@
+                @* Контейнер за снимката с фиксирана височина 200px *@
                 <div style="position: relative; width: 100%; height: 200px; overflow: hidden; background: #eee;">
+
+                    @* Ако продуктът има снимка — показваме я, иначе емоджи *@
                     @if (!string.IsNullOrEmpty(item.ImageUrl))
                     {
+                        @* object-fit: cover — снимката запълва целия бокс без разтягане *@
                         <img src="@item.ImageUrl" alt="@item.Name"
                              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
                     }
                     else
                     {
+                        @* Резервен вариант когато няма снимка *@
                         <div style="height: 200px; display: flex; align-items: center; justify-content: center; font-size: 3rem;">🛴</div>
                     }
 
+                    @* Бутонът за качване на снимка се вижда само от влезли потребители *@
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        @* Форма за качване — enctype="multipart/form-data" е задължително за файлове *@
                         <form asp-controller="Product" asp-action="UploadImage" asp-route-id="@item.Id"
                               method="post" enctype="multipart/form-data"
                               style="position: absolute; bottom: 8px; right: 8px; margin: 0;">
+
+                            @* Антифоргери токен — защита срещу CSRF атаки *@
                             @Html.AntiForgeryToken()
+
+                            @* Скрит file input, активиран чрез клик върху label-а *@
                             <label style="cursor: pointer; background: rgba(0,0,0,0.65); color: #fff;
                                           padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; margin: 0;">
                                 📷 Смени снимка
+                                @* При избор на файл формата се изпраща автоматично *@
                                 <input type="file" name="imageFile" accept="image/*"
                                        style="display: none;"
                                        onchange="this.closest('form').submit()" />
@@ -52,13 +72,18 @@
                     }
                 </div>
 
+                @* Тяло на картата с информация за продукта *@
                 <div class="card-body">
                     <h3 class="h5">@item.Name</h3>
                     <p class="text-muted small">@item.Description</p>
                     <p class="mb-1"><strong>@item.Price.ToString("0.00") лв.</strong></p>
                     <p class="small mb-3">@item.RangeKm км · @item.MaxSpeedKmh км/ч</p>
+
+                    @* Бутон към детайлната страница на продукта *@
                     <a class="btn btn-sm btn-dark me-1"
                        asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+
+                    @* Бутонът за редакция се вижда само от влезли потребители *@
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         <a class="btn btn-sm btn-warning"

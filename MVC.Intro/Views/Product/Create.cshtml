@@ -1,4 +1,5 @@
-﻿@model Product
+﻿@* Моделът е празен Product обект — попълва се от формата *@
+@model Product
 @{
     ViewData["Title"] = "Нов модел";
 }
@@ -7,43 +8,62 @@
 <hr />
 <div class="row">
     <div class="col-md-6">
+        @* enctype="multipart/form-data" е задължително за форми с качване на файлове *@
         <form asp-action="Create" enctype="multipart/form-data">
+
+            @* Показва общи грешки на модела (не за конкретни полета) *@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            @* Поле: Модел/Наименование *@
             <div class="mb-3">
                 <label asp-for="Name" class="form-label"></label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
+
+            @* Поле: Цена *@
             <div class="mb-3">
                 <label asp-for="Price" class="form-label"></label>
                 <input asp-for="Price" class="form-control" />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
+
+            @* Поле: Описание — textarea за по-дълъг текст *@
             <div class="mb-3">
                 <label asp-for="Description" class="form-label"></label>
                 <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
+
+            @* Поле: Пробег в километри *@
             <div class="mb-3">
                 <label asp-for="RangeKm" class="form-label"></label>
                 <input asp-for="RangeKm" class="form-control" />
                 <span asp-validation-for="RangeKm" class="text-danger"></span>
             </div>
+
+            @* Поле: Максимална скорост *@
             <div class="mb-3">
                 <label asp-for="MaxSpeedKmh" class="form-label"></label>
                 <input asp-for="MaxSpeedKmh" class="form-control" />
                 <span asp-validation-for="MaxSpeedKmh" class="text-danger"></span>
             </div>
+
+            @* Поле: Качване на снимка — незадължително *@
             <div class="mb-3">
                 <label class="form-label">Снимка</label>
+                @* name="imageFile" трябва да съвпада с параметъра в контролера *@
                 <input type="file" name="imageFile" class="form-control" accept="image/*" />
             </div>
+
+            @* Бутон за запис и бутон за отказ *@
             <button type="submit" class="btn btn-warning">Запази</button>
             <a asp-action="Index" class="btn btn-outline-secondary">Назад</a>
         </form>
     </div>
 </div>
 
+@* Зареждаме скриптовете за client-side валидация *@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
