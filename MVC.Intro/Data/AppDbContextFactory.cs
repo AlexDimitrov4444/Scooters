@@ -8,7 +8,7 @@ namespace MVC.Intro.Data
         public AppDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");
+            var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "Database");
             Directory.CreateDirectory(dataDir);
             var dbPath = Path.Combine(dataDir, "scooters.db");
             optionsBuilder.UseSqlite($"Data Source={dbPath}");

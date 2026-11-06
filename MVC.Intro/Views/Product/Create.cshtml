@@ -51,9 +51,12 @@
 
             @* Поле: Качване на снимка — незадължително *@
             <div class="mb-3">
-                <label class="form-label">Снимка</label>
-                @* name="imageFile" трябва да съвпада с параметъра в контролера *@
-                <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                <label class="form-label" for="imageFile">Снимка</label>
+                <input id="imageFile" type="file" name="imageFile" class="form-control js-image-preview"
+                       accept="image/jpeg,image/png,image/webp,image/gif" data-preview="#imagePreview" />
+                <div class="form-text">JPG, PNG, WEBP или GIF, до 5 MB.</div>
+                <span class="text-danger">@Html.ValidationMessage("imageFile")</span>
+                <img id="imagePreview" class="img-thumbnail mt-2 d-none" alt="Преглед" style="max-height: 150px;" />
             </div>
 
             @* Бутон за запис и бутон за отказ *@

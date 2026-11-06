@@ -15,11 +15,11 @@ namespace MVC.Intro.Models
         [DisplayName("Модел")]
         [Required(ErrorMessage = "Полето е задължително")]
         [StringLength(50, MinimumLength = 3, ErrorMessage = "Дължината на името трябва да е между 3 и 50 символа")]
-        [RegularExpression(@"^[A-Za-z0-9\s\-]+$", ErrorMessage = "Името може да съдържа само букви, цифри, интервали и тирета")]
+        [RegularExpression(@"^[A-Za-zА-Яа-яЁё0-9\s\-]+$", ErrorMessage = "Името може да съдържа само букви, цифри, интервали и тирета")]
         public required string Name { get; set; }
 
         // Цена в лева — задължително поле, между 24.99 и 9999.99 лв.
-        [DisplayName("Цена (лв.)")]
+        [DisplayName("Цена (eur.)")]
         [Required(ErrorMessage = "Задължително е продуктът да има цена")]
         [Range(24.99, 9999.99, ErrorMessage = "Цената трябва да е между 24.99 и 9999.99")]
         public decimal Price { get; set; }

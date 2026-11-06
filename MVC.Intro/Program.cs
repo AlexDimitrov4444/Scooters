@@ -15,15 +15,27 @@ namespace MVC.Intro
             var builder = WebApplication.CreateBuilder(args);
 
             // Определяме пътя до папката Data и файла на SQLite базата данни
-            var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Data");
+            var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Database");
             Directory.CreateDirectory(dataDir); // Създаваме папката ако не съществува
             var dbPath = Path.Combine(dataDir, "scooters.db");
 
             // Регистрираме MVC (контролери + Razor views)
             builder.Services.AddControllersWithViews();
 
+            // Сесии — необходими за кошницата
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             // Регистрираме ProductService — lifetime е Scoped (нов обект на всяка заявка)
             builder.Services.AddScoped<ProductService>();
+            builder.Services.AddScoped<ImageUploadService>();
+            builder.Services.AddScoped<CartService>();
 
             // Конфигурираме Entity Framework Core да използва SQLite база данни
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -40,7 +52,10 @@ namespace MVC.Intro
                     options.LoginPath = "/Account/Login";           // Пренасочване при нужда от вход
                     options.LogoutPath = "/Account/Logout";         // Път за изход
                     options.AccessDeniedPath = "/Account/Login";    // При отказан достъп
-                    options.ExpireTimeSpan = TimeSpan.FromDays(7);  // Бисквитката важи 7 дни
+                    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+                    options.SlidingExpiration = true;
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.Name = "VoltRide.Auth";
                 });
 
             // Регистрираме авторизация (проверка на права)
@@ -84,20 +99,19 @@ namespace MVC.Intro
 
             if (!app.Environment.IsDevelopment())
             {
-                // В production — показваме страница за грешка вместо stack trace
                 app.UseExceptionHandler("/Home/Error");
-                // HSTS — принуждава браузъра да ползва само HTTPS
                 app.UseHsts();
+                app.UseHttpsRedirection();
             }
-
-            // Пренасочваме HTTP заявките към HTTPS
-            app.UseHttpsRedirection();
 
             // Разрешаваме достъп до статични файлове (CSS, JS, снимки от wwwroot)
             app.UseStaticFiles();
 
             // Активираме маршрутизирането
             app.UseRouting();
+
+            // Активираме сесиите (трябва преди Authentication/Authorization)
+            app.UseSession();
 
             // Проверяваме кой е потребителят (автентикация) — трябва да е преди Authorization
             app.UseAuthentication();

@@ -21,10 +21,28 @@ namespace MVC.Intro.Services
             _context = context;
         }
 
-        // Връща всички продукти от базата асинхронно (не блокира нишката)
-        public async Task<List<Product>> GetAllProductsAsync()
+        public async Task<List<Product>> GetAllProductsAsync(string? search = null, string? sort = null)
         {
-            return await _context.Products.ToListAsync();
+            var query = _context.Products.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(p =>
+                    p.Name.Contains(term) ||
+                    (p.Description != null && p.Description.Contains(term)));
+            }
+
+            query = sort switch
+            {
+                "price_asc" => query.OrderBy(p => p.Price),
+                "price_desc" => query.OrderByDescending(p => p.Price),
+                "range" => query.OrderByDescending(p => p.RangeKm),
+                "speed" => query.OrderByDescending(p => p.MaxSpeedKmh),
+                _ => query.OrderBy(p => p.Name)
+            };
+
+            return await query.ToListAsync();
         }
 
         // Синхронна версия — връща всички продукти (използва се когато async не е нужен)

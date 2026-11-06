@@ -1,75 +1,98 @@
-﻿@* Моделът е колекция от продукти — подава се от ProductController.Index() *@
-@model IEnumerable<Product>
+﻿@model IEnumerable<Product>
 @{
     ViewData["Title"] = "Тротинетки";
+    var search = ViewData["Search"] as string ?? string.Empty;
+    var sort = ViewData["Sort"] as string ?? "name";
+    var products = Model.ToList();
 }
 
-@* Заглавие и бутон за добавяне (само за влезли потребители) *@
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h1 class="h3 mb-0">Каталог електрически тротинетки</h1>
-
-    @* Показваме различни бутони според това дали потребителят е влязъл *@
     @if (User.Identity?.IsAuthenticated == true)
     {
-        @* Влязъл потребител вижда бутон за добавяне *@
         <a class="btn btn-warning" asp-controller="Product" asp-action="Create">Добави модел</a>
     }
     else
     {
-        @* Невлязъл потребител вижда покана за вход *@
         <a class="btn btn-outline-dark" asp-controller="Account" asp-action="Login">Влез, за да добавяш</a>
     }
 </div>
 
-@* Bootstrap grid — 3 колони на голям екран *@
-<div class="row g-4">
-    @* Обхождаме всеки продукт и генерираме карта *@
-    @foreach (var item in Model)
-    {
-        <div class="col-md-6 col-lg-4">
-            <div class="card scooter-card h-100">
+<form method="get" class="catalog-toolbar mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label" for="q">Търсене</label>
+            <input id="q" name="q" value="@search" class="form-control" placeholder="Име или описание" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="sort">Подреди</label>
+            <select id="sort" name="sort" class="form-select">
+                <option value="name" selected="@(sort == "name" ? "selected" : null)">По име</option>
+                <option value="price_asc" selected="@(sort == "price_asc" ? "selected" : null)">Цена: ниска → висока</option>
+                <option value="price_desc" selected="@(sort == "price_desc" ? "selected" : null)">Цена: висока → ниска</option>
+                <option value="range" selected="@(sort == "range" ? "selected" : null)">Най-дълъг пробег</option>
+                <option value="speed" selected="@(sort == "speed" ? "selected" : null)">Най-висока скорост</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-dark w-100">Покажи</button>
+        </div>
+    </div>
+</form>
 
-                @* Снимка на продукта — ако има такава, иначе емоджи *@
-                @if (!string.IsNullOrEmpty(item.ImageUrl))
-                {
-                    @* object-fit: cover — запълва пространството без разтягане *@
-                    <img src="@item.ImageUrl" class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
-                }
-                else
-                {
-                    @* Резервен вариант без снимка *@
-                    <div class="scooter-visual">⚡🛴</div>
-                }
-
-                @* Информация за продукта *@
-                <div class="card-body">
-                    <h2 class="h5">@item.Name</h2>
-                    <p class="text-muted">@item.Description</p>
-                    <ul class="list-unstyled small">
-                        <li>Цена: <strong>@item.Price.ToString("0.00") лв.</strong></li>
-                        <li>Пробег: @item.RangeKm км</li>
-                        <li>Макс. скорост: @item.MaxSpeedKmh км/ч</li>
-                    </ul>
-
-                    @* Бутон към детайлите на продукта *@
-                    <a class="btn btn-sm btn-dark me-2"
-                       asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
-
-                    @* Бутоните за редакция и изтриване са само за влезли потребители *@
-                    @if (User.Identity?.IsAuthenticated == true)
+@if (!products.Any())
+{
+    <div class="empty-state">
+        <p class="mb-2 fs-1">🔍</p>
+        <h2 class="h5">Няма намерени модели</h2>
+        <p class="text-muted mb-0">Опитайте с друга дума или изчистете търсенето.</p>
+    </div>
+}
+else
+{
+    <p class="text-muted small mb-3">Показани: @products.Count</p>
+    <div class="row g-4">
+        @foreach (var item in products)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card scooter-card h-100">
+                    @if (!string.IsNullOrEmpty(item.ImageUrl))
                     {
-                        @* Бутон за редактиране на продукта *@
-                        <a class="btn btn-sm btn-warning me-2"
-                           asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">Редакция</a>
-
-                        @* Форма за изтриване — използва POST за да е защитена *@
-                        <form asp-action="Delete" asp-controller="Product" asp-route-id="@item.Id"
-                              method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Изтрий</button>
-                        </form>
+                        <img src="@item.ImageUrl" class="card-img-top" alt="@item.Name" style="height: 200px; object-fit: cover;">
                     }
+                    else
+                    {
+                        <div class="scooter-visual">⚡🛴</div>
+                    }
+
+                    <div class="card-body">
+                        <h2 class="h5">@item.Name</h2>
+                        <p class="text-muted">@item.Description</p>
+                        <p class="price-tag mb-2">@item.Price.ToString("0.00") eur.</p>
+                        <p class="mb-3">
+                            <span class="spec-badge">Пробег @item.RangeKm км</span>
+                            <span class="spec-badge">@item.MaxSpeedKmh км/ч</span>
+                        </p>
+                        <a class="btn btn-sm btn-dark me-2"
+                           asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                        <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
+                            <input type="hidden" name="productId" value="@item.Id" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning btn-sm me-2">🛒 Добави в кошница</button>
+                        </form>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a class="btn btn-sm btn-warning me-2"
+                               asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">Редакция</a>
+                            <form asp-action="Delete" asp-controller="Product" asp-route-id="@item.Id"
+                                  method="post" class="d-inline js-confirm-delete"
+                                  data-confirm="Изтриване на „@item.Name“?">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Изтрий</button>
+                            </form>
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
-    }
-</div>
+        }
+    </div>
+}

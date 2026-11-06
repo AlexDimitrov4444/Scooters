@@ -1,0 +1,60 @@
+@model List<MVC.Intro.Models.CartItem>
+@{
+    ViewData["Title"] = "Кошница";
+    var total = (decimal)(ViewData["Total"] ?? 0m);
+}
+
+<h2 class="mb-4">🛒 Кошница</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Кошницата е празна.</div>
+    <a asp-controller="Product" asp-action="Index" class="btn btn-primary">← Продължи пазаруването</a>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Продукт</th>
+                <th>Цена (eur.)</th>
+                <th>Количество</th>
+                <th>Сума (eur.)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Price.ToString("F2")</td>
+                    <td>@item.Quantity</td>
+                    <td>@((item.Price * item.Quantity).ToString("F2"))</td>
+                    <td>
+                        <form asp-controller="Cart" asp-action="RemoveFromCart" method="post" class="d-inline">
+                            <input type="hidden" name="productId" value="@item.ProductId" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger btn-sm">Премахни</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end fw-bold">Общо:</td>
+                <td class="fw-bold">@total.ToString("F2") eur.</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="d-flex gap-2 mt-3">
+        <form asp-controller="Cart" asp-action="ClearCart" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">🗑 Изчисти кошницата</button>
+        </form>
+        <a asp-controller="Product" asp-action="Index" class="btn btn-primary">← Продължи пазаруването</a>
+    </div>
+}

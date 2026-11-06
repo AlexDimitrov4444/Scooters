@@ -1,54 +1,41 @@
-﻿@* Моделът е един продукт — подава се от ProductController.Details(id) *@
-@model Product
+﻿@model Product
 @{
-    @* Заглавието на страницата е името на продукта *@
     ViewData["Title"] = Model.Name;
 }
 
-@* Карта с детайлна информация — снимка вляво, данни вдясно *@
 <div class="card scooter-card">
     <div class="row g-0">
-
-        @* Снимка — ако съществува, показваме я в лявата колона *@
         @if (!string.IsNullOrEmpty(Model.ImageUrl))
         {
-            <div class="col-md-4">
-                @* h-100 — снимката заема цялата височина на картата *@
-                <img src="@Model.ImageUrl" class="img-fluid rounded-start h-100"
-                     alt="@Model.Name" style="object-fit: cover;">
+            <div class="col-md-5">
+                <img src="@Model.ImageUrl" class="img-fluid rounded-start w-100 h-100"
+                     alt="@Model.Name" style="object-fit: cover; min-height: 280px;">
             </div>
         }
         else
         {
-            @* Ако няма снимка — показваме голямо емоджи *@
-            <div class="col-md-4 scooter-visual-lg">🛴</div>
+            <div class="col-md-5 scooter-visual-lg">🛴</div>
         }
 
-        @* Дясна колона с технически характеристики *@
-        <div class="col-md-8">
-            <div class="card-body">
+        <div class="col-md-7">
+            <div class="card-body p-4">
+                <p class="text-muted text-uppercase small mb-1">Електрическа тротинетка</p>
                 <h1 class="h3">@Model.Name</h1>
-                <p>@Model.Description</p>
+                <p class="lead">@Model.Description</p>
+                <p class="price-tag mb-3">@Model.Price.ToString("0.00") eur.</p>
 
-                @* Характеристики в двуколонен layout (dl/dt/dd) *@
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Цена</dt>
-                    <dd class="col-sm-8">@Model.Price.ToString("0.00") лв.</dd>
-
                     <dt class="col-sm-4">Пробег</dt>
-                    <dd class="col-sm-8">@Model.RangeKm км</dd>
+                    <dd class="col-sm-8">@Model.RangeKm км с едно зареждане</dd>
 
                     <dt class="col-sm-4">Макс. скорост</dt>
                     <dd class="col-sm-8">@Model.MaxSpeedKmh км/ч</dd>
                 </dl>
 
-                @* Бутон за връщане към каталога *@
-                <a class="btn btn-dark mt-3" asp-action="Index">Назад към каталога</a>
-
-                @* Бутонът за редакция се вижда само от влезли потребители *@
+                <a class="btn btn-dark mt-4" asp-action="Index">Назад към каталога</a>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <a class="btn btn-warning mt-3 ms-2"
+                    <a class="btn btn-warning mt-4 ms-2"
                        asp-action="Edit" asp-route-id="@Model.Id">Редакция</a>
                 }
             </div>

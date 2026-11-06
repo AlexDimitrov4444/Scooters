@@ -12,22 +12,19 @@ namespace MVC.Intro.Controllers
     {
         // Бизнес логиката за продукти — инжектира се автоматично
         private readonly ProductService _productService;
+        private readonly ImageUploadService _imageUploadService;
 
-        // Предоставя достъп до wwwroot папката за качване на снимки
-        private readonly IWebHostEnvironment _webHostEnvironment;
-
-        // Конструктор — зависимостите се подават от dependency injection контейнера
-        public ProductController(ProductService productService, IWebHostEnvironment webHostEnvironment)
+        public ProductController(ProductService productService, ImageUploadService imageUploadService)
         {
             _productService = productService;
-            _webHostEnvironment = webHostEnvironment;
+            _imageUploadService = imageUploadService;
         }
 
-        // GET /Product/Index — показва списък с всички продукти
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q, string? sort)
         {
-            // Зареждаме всички продукти от базата и ги подаваме към view-то
-            var products = await _productService.GetAllProductsAsync();
+            ViewData["Search"] = q ?? string.Empty;
+            ViewData["Sort"] = sort ?? "name";
+            var products = await _productService.GetAllProductsAsync(q, sort);
             return View(products);
         }
 
@@ -61,43 +58,18 @@ namespace MVC.Intro.Controllers
         public async Task<IActionResult> Create(Product product, IFormFile? imageFile)
         {
             // Проверяваме дали данните от формата са валидни (според атрибутите в модела)
-            if (!ModelState.IsValid)
+            if (!await TryAssignImageAsync(product, imageFile))
             {
-                // Ако има грешки, показваме формата отново с грешките
                 return View(product);
             }
 
-            // Обработваме качената снимка (ако е подадена)
-            if (imageFile != null && imageFile.Length > 0)
+            if (!ModelState.IsValid)
             {
-                // Папката за качване: wwwroot/images
-                var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images");
-
-                // Създаваме папката ако не съществува
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                // Генерираме уникално име на файла (GUID + оригинално разширение)
-                // Това предотвратява презаписване на съществуващи файлове
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                // Записваме файла на диска
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imageFile.CopyToAsync(fileStream);
-                }
-
-                // Запазваме относителния URL за ползване в <img> тагове
-                product.ImageUrl = "/images/" + uniqueFileName;
+                return View(product);
             }
 
-            // Записваме продукта в базата данни
             await _productService.AddProductAsync(product);
-
-            // Пренасочваме към списъка с продукти
+            TempData["Success"] = "Моделът е добавен успешно.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -127,34 +99,18 @@ namespace MVC.Intro.Controllers
                 return BadRequest();
             }
 
+            if (!await TryAssignImageAsync(product, imageFile))
+            {
+                return View(product);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(product);
             }
 
-            // Ако е качена нова снимка, я записваме и обновяваме URL-а
-            if (imageFile != null && imageFile.Length > 0)
-            {
-                var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imageFile.CopyToAsync(fileStream);
-                }
-
-                product.ImageUrl = "/images/" + uniqueFileName;
-            }
-
             try
             {
-                // Обновяваме продукта в базата
                 await _productService.UpdateProductAsync(product);
             }
             catch (KeyNotFoundException)
@@ -162,6 +118,7 @@ namespace MVC.Intro.Controllers
                 return NotFound();
             }
 
+            TempData["Success"] = "Промените са запазени.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -172,29 +129,25 @@ namespace MVC.Intro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadImage(Guid id, IFormFile? imageFile)
         {
-            if (imageFile != null && imageFile.Length > 0)
+            var product = await _productService.GetProductByIdAsync(id);
+            if (product == null)
             {
-                // Записваме новата снимка в wwwroot/images
-                var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images");
-                Directory.CreateDirectory(uploadsFolder);
-
-                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imageFile.CopyToAsync(fileStream);
-                }
-
-                // Намираме продукта и обновяваме само ImageUrl
-                var product = await _productService.GetProductByIdAsync(id);
-                if (product == null) return NotFound();
-
-                product.ImageUrl = "/images/" + uniqueFileName;
-                await _productService.UpdateProductAsync(product);
+                return NotFound();
             }
 
-            // Връщаме се на началната страница след качването
+            if (!await TryAssignImageAsync(product, imageFile))
+            {
+                TempData["Error"] = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage
+                    ?? "Снимката не беше качена.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                await _productService.UpdateProductAsync(product);
+                TempData["Success"] = "Снимката е обновена.";
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -213,8 +166,25 @@ namespace MVC.Intro.Controllers
                 return NotFound();
             }
 
-            // След изтриването се връщаме към списъка
+            TempData["Success"] = "Моделът е изтрит.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<bool> TryAssignImageAsync(Product product, IFormFile? imageFile)
+        {
+            var (url, error) = await _imageUploadService.SaveAsync(imageFile);
+            if (error != null)
+            {
+                ModelState.AddModelError("imageFile", error);
+                return false;
+            }
+
+            if (url != null)
+            {
+                product.ImageUrl = url;
+            }
+
+            return true;
         }
     }
 }
