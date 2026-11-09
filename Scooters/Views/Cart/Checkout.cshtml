@@ -1,0 +1,83 @@
+@model Scooters.Models.CheckoutViewModel
+@{
+    ViewData["Title"] = "Завърши поръчка";
+}
+
+<h2 class="mb-4">📦 Завърши поръчката</h2>
+
+<form asp-controller="Cart" asp-action="Checkout" method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+        <!-- Лява колона — форма за доставка -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white fw-semibold">
+                    🚚 Данни за доставка
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Иван Иванов" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Phone" class="form-label"></label>
+                        <input asp-for="Phone" class="form-control" placeholder="+359 88 888 8888" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="City" class="form-label"></label>
+                        <input asp-for="City" class="form-control" placeholder="София" />
+                        <span asp-validation-for="City" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label"></label>
+                        <input asp-for="Address" class="form-control" placeholder="ул. Витоша 1, ап. 5" />
+                        <span asp-validation-for="Address" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дясна колона — обобщение на поръчката -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white fw-semibold">
+                    🛒 Вашата поръчка
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td class="ps-3">@item.Name</td>
+                                    <td class="text-center">x@item.Quantity</td>
+                                    <td class="text-end pe-3">@((item.Price * item.Quantity).ToString("F2")) €</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-dark">
+                            <tr>
+                                <td colspan="2" class="ps-3 fw-bold">Общо</td>
+                                <td class="text-end pe-3 fw-bold">@Model.Total.ToString("F2") €</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success w-100 fw-semibold">
+                        ✅ Потвърди поръчката
+                    </button>
+                    <a asp-controller="Cart" asp-action="Index" class="btn btn-outline-secondary w-100 mt-2">
+                        ← Обратно в кошницата
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

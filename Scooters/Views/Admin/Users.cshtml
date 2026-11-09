@@ -1,0 +1,48 @@
+﻿@model List<Scooters.Models.AdminUserViewModel>
+@{
+    ViewData["Title"] = "Потребители";
+}
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="/Admin" class="btn btn-outline-secondary btn-sm">🏠 Дашборд</a>
+    <a asp-controller="Admin" asp-action="Orders"   class="btn btn-outline-secondary btn-sm">📋 Поръчки</a>
+    <a asp-controller="Admin" asp-action="Products" class="btn btn-outline-secondary btn-sm">📦 Продукти</a>
+    <a asp-controller="Admin" asp-action="Users"    class="btn btn-dark btn-sm">👥 Потребители</a>
+</div>
+
+<h2 class="mb-4">👥 Потребители</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3">Имена</th>
+                    <th>Имейл</th>
+                    <th class="text-center">Роля</th>
+                    <th class="text-center">Поръчки</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td class="ps-3">@user.FullName</td>
+                        <td>@user.Email</td>
+                        <td class="text-center">
+                            @if (user.IsAdmin)
+                            {
+                                <span class="badge bg-danger">Админ</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Потребител</span>
+                            }
+                        </td>
+                        <td class="text-center">@user.OrderCount</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

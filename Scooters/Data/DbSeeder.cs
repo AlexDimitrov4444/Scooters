@@ -59,6 +59,8 @@ namespace Scooters.Data
             // Проверяваме дали вече има потребители — ако има, не добавяме нови
             if (!context.Users.Any())
             {
+                var hasher = new PasswordHasher<User>();
+
                 // Създаваме демо потребител за тестване
                 var demo = new User
                 {
@@ -67,12 +69,28 @@ namespace Scooters.Data
                     Email = "demo@volt.bg",
                     PasswordHash = string.Empty  // Временно празно — ще се хешира по-долу
                 };
+                demo.IsAdmin = false;
 
                 // Хешираме паролата преди запис (никога не пазим пароли в чист текст)
-                var hasher = new PasswordHasher<User>();
                 demo.PasswordHash = hasher.HashPassword(demo, "Demo123!");
 
                 context.Users.Add(demo);
+            }
+
+            // Добавяме администраторски акаунт ако не съществува
+            if (!context.Users.Any(u => u.Email == "admin@scooters.bg"))
+            {
+                var hasher = new PasswordHasher<User>();
+                var admin = new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Администратор",
+                    Email = "admin@scooters.bg",
+                    PasswordHash = string.Empty,
+                    IsAdmin = true
+                };
+                admin.PasswordHash = hasher.HashPassword(admin, "Admin123!");
+                context.Users.Add(admin);
             }
 
             // Записваме всички промени в базата данни

@@ -1,0 +1,73 @@
+@model Scooters.Models.Order
+@{
+    ViewData["Title"] = "Поръчката е приета";
+    var shortId = Model.Id.ToString().Substring(0, 8).ToUpper();
+}
+
+<div class="text-center py-4">
+    <div class="display-1">✅</div>
+    <h2 class="mt-3 fw-bold">Благодарим ви!</h2>
+    <p class="lead text-muted">Поръчка <strong>#@shortId</strong> е приета успешно.</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-7">
+        <!-- Артикули -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">🛒 Артикули</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Продукт</th>
+                            <th class="text-center">Кол.</th>
+                            <th class="text-end pe-3">Цена</th>
+                            <th class="text-end pe-3">Сума</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-3">@item.ProductName</td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end pe-3">@item.UnitPrice.ToString("F2") €</td>
+                                <td class="text-end pe-3">@((item.UnitPrice * item.Quantity).ToString("F2")) €</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td colspan="3" class="ps-3 fw-bold">Общо</td>
+                            <td class="text-end pe-3 fw-bold">@Model.Total.ToString("F2") €</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Адрес за доставка -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">🚚 Доставка до</div>
+            <div class="card-body">
+                <p class="mb-1"><strong>@Model.FullName</strong></p>
+                <p class="mb-1">📞 @Model.Phone</p>
+                <p class="mb-0">📍 @Model.Address, @Model.City</p>
+            </div>
+        </div>
+
+        <!-- Статус -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">📋 Статус</div>
+            <div class="card-body">
+                <span class="badge bg-secondary fs-6">Изчакваща обработка</span>
+                <p class="text-muted mt-2 mb-0 small">Ще получите известие при промяна на статуса.</p>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-controller="Account" asp-action="Orders" class="btn btn-primary">📦 Моите поръчки</a>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-outline-secondary">← Продължи пазаруването</a>
+        </div>
+    </div>
+</div>

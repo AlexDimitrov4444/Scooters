@@ -1,0 +1,59 @@
+﻿@model List<Scooters.Models.Product>
+@{
+    ViewData["Title"] = "Продукти";
+}
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="/Admin" class="btn btn-outline-secondary btn-sm">🏠 Дашборд</a>
+    <a asp-controller="Admin" asp-action="Orders"   class="btn btn-outline-secondary btn-sm">📋 Поръчки</a>
+    <a asp-controller="Admin" asp-action="Products" class="btn btn-dark btn-sm">📦 Продукти</a>
+    <a asp-controller="Admin" asp-action="Users"    class="btn btn-outline-secondary btn-sm">👥 Потребители</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📦 Продукти</h2>
+    <a asp-controller="Product" asp-action="Create" class="btn btn-success">+ Добави продукт</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3">Модел</th>
+                    <th class="text-end">Цена (€)</th>
+                    <th class="text-center">Пробег (км)</th>
+                    <th class="text-center">Скорост (км/ч)</th>
+                    <th class="text-center">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model)
+                {
+                    <tr>
+                        <td class="ps-3">
+                            @if (product.ImageUrl != null)
+                            {
+                                <img src="@product.ImageUrl" alt="@product.Name" style="width:40px;height:30px;object-fit:cover;border-radius:4px;" class="me-2" />
+                            }
+                            @product.Name
+                        </td>
+                        <td class="text-end">@product.Price.ToString("F2")</td>
+                        <td class="text-center">@product.RangeKm</td>
+                        <td class="text-center">@product.MaxSpeedKmh</td>
+                        <td class="text-center">
+                            <a asp-controller="Product" asp-action="Edit" asp-route-id="@product.Id"
+                               class="btn btn-sm btn-outline-primary me-1">✏ Редактирай</a>
+                            <form asp-controller="Product" asp-action="Delete" method="post" class="d-inline"
+                                  onsubmit="return confirm('Изтриване на @product.Name?')">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@product.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Изтрий</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

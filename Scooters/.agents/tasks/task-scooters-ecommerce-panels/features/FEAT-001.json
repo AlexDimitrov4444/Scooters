@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add admin role support: IsAdmin on User, AdminOnly policy, role claim in sign-in, seeder update, and EF migration. Also add Order/OrderItem/OrderStatus models, CheckoutViewModel, DbSets, and second EF migration. These two migrations must be authored together because FEAT-002 depends on both being applied before it can build.",
+  "status": "pending",
+  "steps": [
+    "1. Edit Models/User.cs: add `public bool IsAdmin { get; set; }` property with default false. No annotation needed — EF will map it as a non-nullable BIT column.",
+    "2. Edit Data/DbSeeder.cs: in the Users block, after creating the demo user set `demo.IsAdmin = false`. Then add a second seeded user: admin@scooters.bg / Admin123!, FullName='Администратор', IsAdmin=true. Use the same PasswordHasher<User> pattern already in the file. Guard with `if (!context.Users.Any(u => u.Email == \"admin@scooters.bg\"))` so re-seeding is safe.",
+    "3. Edit Controllers/AccountController.cs: in the private `SignInUser` method, after the existing claims list, add `if (user.IsAdmin) claims.Add(new Claim(ClaimTypes.Role, \"Admin\"));`. No other changes to this method.",
+    "4. Edit Program.cs: in `builder.Services.AddAuthorization()`, change it to `builder.Services.AddAuthorization(options => { options.AddPolicy(\"AdminOnly\", policy => policy.RequireRole(\"Admin\")); });`.",
+    "5. Create Models/OrderStatus.cs: `namespace Scooters.Models { public enum OrderStatus { Pending, Processing, Shipped, Delivered, Cancelled } }`.",
+    "6. Create Models/Order.cs: Id Guid (key), UserId Guid, User navigation property, CreatedAt DateTime (default DateTime.UtcNow), Status OrderStatus, FullName/Phone/Address/City strings ([Required][MaxLength(200/30/300/100)]), Total decimal, Items List<OrderItem> = new(). Use `namespace Scooters.Models`.",
+    "7. Create Models/OrderItem.cs: Id Guid (key), OrderId Guid, Order navigation property, ProductId Guid, ProductName string ([Required][MaxLength(100)]), UnitPrice decimal, Quantity int, computed `public decimal Subtotal => UnitPrice * Quantity;` (not mapped). Use `namespace Scooters.Models`.",
+    "8. Create Models/CheckoutViewModel.cs: FullName/Phone/Address/City all [Required] strings with display names in Bulgarian, Items List<CartItem> = new(), Total decimal. Add `using Scooters.Models;` and `namespace Scooters.Models`.",
+    "9. Edit Data/AppDbContext.cs: add `public DbSet<Order> Orders { get; set; } = null!;` and `public DbSet<OrderItem> OrderItems { get; set; } = null!;`. In OnModelCreating, configure Order→User FK (DeleteBehavior.Restrict), Order→Items cascade, and mark OrderItem.Subtotal as `[NotMapped]` via Fluent or [NotMapped] attribute on the property.",
+    "10. Run `dotnet ef migrations add AddIsAdminToUser --project c:\\Users\\Students\\MVC\\MVC\\Scooters` to generate the migration for IsAdmin on User.",
+    "11. Run `dotnet ef migrations add AddOrders --project c:\\Users\\Students\\MVC\\MVC\\Scooters` to generate the migration for Orders and OrderItems tables.",
+    "12. Run `dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj` and confirm Build succeeded."
+  ],
+  "acceptance_criteria": [
+    "dotnet build produces 0 errors",
+    "Migrations/AddIsAdminToUser migration file exists and adds IsAdmin column to Users table",
+    "Migrations/AddOrders migration file exists and creates Orders and OrderItems tables",
+    "User.IsAdmin property exists (bool, default false)",
+    "OrderStatus enum has 5 values: Pending, Processing, Shipped, Delivered, Cancelled",
+    "Order and OrderItem models compile with required navigation properties",
+    "CheckoutViewModel compiles with all 4 required string fields and Items/Total",
+    "AppDbContext has DbSet<Order> and DbSet<OrderItem>",
+    "Program.cs registers AdminOnly policy requiring Role=Admin",
+    "AccountController.SignInUser adds Role=Admin claim when user.IsAdmin is true",
+    "DbSeeder seeds admin@scooters.bg with IsAdmin=true"
+  ],
+  "verification": [
+    "dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj",
+    "Confirm output contains 'Build succeeded' with 0 errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

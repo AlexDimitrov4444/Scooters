@@ -1,0 +1,7 @@
+{
+  "task_id": "task-scooters-ecommerce-panels",
+  "task_description": "Add admin role support, order/checkout flow, client order panel, and admin panel to the VoltRide scooter e-commerce site. All UI in Bulgarian, Bootstrap 5.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

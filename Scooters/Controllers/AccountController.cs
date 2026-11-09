@@ -21,6 +21,36 @@ namespace Scooters.Controllers
             _passwordHasher = passwordHasher;
         }
 
+        // GET /Account/Orders — моите поръчки
+        [Authorize]
+        public async Task<IActionResult> Orders()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdStr, out var userId);
+
+            var orders = await _context.Orders
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+            return View(orders);
+        }
+
+        // GET /Account/OrderDetails/{id} — детайли на поръчка
+        [Authorize]
+        public async Task<IActionResult> OrderDetails(Guid id)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid.TryParse(userIdStr, out var userId);
+
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+
+            if (order == null) return NotFound();
+            return View(order);
+        }
+
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
@@ -43,9 +73,7 @@ namespace Scooters.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var normalizedEmail = model.Email.Trim().ToLowerInvariant();
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
@@ -64,9 +92,7 @@ namespace Scooters.Controllers
 
             await SignInUser(user, model.RememberMe);
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
                 return Redirect(returnUrl);
-            }
 
             return RedirectToAction("Index", "Home");
         }
@@ -84,9 +110,7 @@ namespace Scooters.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var normalizedEmail = model.Email.Trim().ToLowerInvariant();
             if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
@@ -127,15 +151,15 @@ namespace Scooters.Controllers
                 new(ClaimTypes.Email, user.Email)
             };
 
+            if (user.IsAdmin)
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = rememberMe
-                });
+                new AuthenticationProperties { IsPersistent = rememberMe });
         }
     }
 }

@@ -1,0 +1,118 @@
+﻿@model List<Scooters.Models.Order>
+@{
+    ViewData["Title"] = "Админ панел";
+    var totalOrders  = (int)(ViewData["TotalOrders"]  ?? 0);
+    var totalRevenue = (decimal)(ViewData["TotalRevenue"] ?? 0m);
+    var pending      = (int)(ViewData["Pending"]      ?? 0);
+    var processing   = (int)(ViewData["Processing"]   ?? 0);
+    var shipped      = (int)(ViewData["Shipped"]      ?? 0);
+    var delivered    = (int)(ViewData["Delivered"]    ?? 0);
+    var cancelled    = (int)(ViewData["Cancelled"]    ?? 0);
+}
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="/Admin" class="btn btn-dark btn-sm">🏠 Дашборд</a>
+    <a asp-controller="Admin" asp-action="Orders"   class="btn btn-outline-secondary btn-sm">📋 Поръчки</a>
+    <a asp-controller="Admin" asp-action="Products" class="btn btn-outline-secondary btn-sm">📦 Продукти</a>
+    <a asp-controller="Admin" asp-action="Users"    class="btn btn-outline-secondary btn-sm">👥 Потребители</a>
+</div>
+
+<h2 class="mb-4">⚙ Админ панел</h2>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-dark h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold">@totalOrders</div>
+                <div class="mt-1">Общо поръчки</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold">@totalRevenue.ToString("F2")</div>
+                <div class="mt-1">Приходи (€)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-4 fw-bold">@pending</div>
+                <div class="mt-1">Изчакващи</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-primary shadow-sm text-center p-3">
+            <div class="fs-2 fw-bold">@processing</div>
+            <div>В обработка</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-info shadow-sm text-center p-3">
+            <div class="fs-2 fw-bold">@shipped</div>
+            <div>Изпратени</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-success shadow-sm text-center p-3">
+            <div class="fs-2 fw-bold">@delivered</div>
+            <div>Доставени</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-white bg-danger shadow-sm text-center p-3">
+            <div class="fs-2 fw-bold">@cancelled</div>
+            <div>Отказани</div>
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">Последни поръчки</h5>
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-3">Номер</th>
+                    <th>Клиент</th>
+                    <th>Дата</th>
+                    <th>Статус</th>
+                    <th class="text-end">Сума</th>
+                    <th class="text-center">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    var shortId = order.Id.ToString().Substring(0, 8).ToUpper();
+                    var (bc, lbl) = order.Status switch
+                    {
+                        Scooters.Models.OrderStatus.Pending    => ("secondary", "Изчакваща"),
+                        Scooters.Models.OrderStatus.Processing => ("primary",   "В обработка"),
+                        Scooters.Models.OrderStatus.Shipped    => ("info",      "Изпратена"),
+                        Scooters.Models.OrderStatus.Delivered  => ("success",   "Доставена"),
+                        Scooters.Models.OrderStatus.Cancelled  => ("danger",    "Отказана"),
+                        _                                      => ("secondary", "Неизвестен")
+                    };
+                    <tr>
+                        <td class="ps-3 fw-semibold">#@shortId</td>
+                        <td>@(order.User?.FullName ?? "—")</td>
+                        <td>@order.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                        <td><span class="badge bg-@bc">@lbl</span></td>
+                        <td class="text-end">@order.Total.ToString("F2") €</td>
+                        <td class="text-center">
+                            <a asp-controller="Admin" asp-action="OrderDetails" asp-route-id="@order.Id"
+                               class="btn btn-sm btn-outline-primary">Виж</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

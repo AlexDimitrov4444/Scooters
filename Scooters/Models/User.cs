@@ -13,5 +13,8 @@ namespace Scooters.Models
         public required string Email { get; set; }
 
         public required string PasswordHash { get; set; }
+
+        // Флаг за администраторски достъп — по подразбиране false
+        public bool IsAdmin { get; set; } = false;
     }
 }

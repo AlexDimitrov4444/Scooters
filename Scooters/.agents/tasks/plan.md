@@ -1,168 +1,150 @@
-# Implementation Plan
+# Implementation Plan — Scooters Admin & Client Panels
 
-## Context
-
-- **Project**: ASP.NET Core 8 MVC — `MVC.Intro` namespace, target `net8.0`
-- **Build**: `dotnet build` from `c:\Users\Students\MVC\MVC\MVC.Intro`
-- **Run/smoke-test**: `dotnet run` — app starts, navigates to `/Product` and `/Cart`
-- **No automated test project** present; verification is build + manual smoke checks
-- **Key facts discovered**:
-  - `Program.cs` hardcodes `Path.Combine(...ContentRootPath, "Data")` to locate the DB — must be updated alongside `appsettings.json`
-  - `AppDbContextFactory.cs` also hardcodes `"Data"` — used by EF migrations CLI
-  - `Product.Id` is `Guid`, `Price` is `decimal`
-  - `Services/` folder already exists (`ProductService.cs`, `ImageUploadService.cs`) — `CartService` goes there
-  - `_ViewImports.cshtml` already imports `MVC.Intro.Models`, so `CartItem` is available in views without extra `@using`
-  - Layout uses Bootstrap 5; nav links follow the `asp-controller` / `asp-action` tag-helper pattern with an active-class inline check
-  - `[Route("[controller]/[action]")]` is on `ProductController`; `CartController` should use the same convention
-  - No session middleware is registered yet — `AddSession`, `AddDistributedMemoryCache`, `AddHttpContextAccessor`, and `UseSession()` are all missing
+Project: `c:\Users\Students\MVC\MVC\Scooters\Scooters.csproj`  
+Build: `dotnet build c:\Users\Students\MVC\MVC\Scooters\Scooters.csproj`  
+EF migrations: `dotnet ef migrations add <Name> --project c:\Users\Students\MVC\MVC\Scooters`
 
 ---
 
-## Task 1 — Move SQLite DB to `Database\` folder
+## FEAT-001 — Admin Role + Order Models + Migrations
 
-- [ ] 1. Create the `Database\` folder, move `scooters.db` into it, and update `appsettings.json`.
-      - Create directory `c:\Users\Students\MVC\MVC\MVC.Intro\Database\`.
-      - Move `Data\scooters.db` → `Database\scooters.db`.
-      - In `appsettings.json` change `"Data Source=Data/scooters.db"` to `"Data Source=Database/scooters.db"`.  
-        (Note: this connection string is present in `appsettings.json` but **not** consumed by `Program.cs` at runtime — `Program.cs` builds its own path; the string is kept for documentation/tooling consistency.)
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Database\` (new folder), `appsettings.json`, `Data\scooters.db` (moved)
-      - Verify: `dotnet build` passes with no errors.
+- [ ] 1. Add `public bool IsAdmin { get; set; }` to `Models/User.cs`.
+      No annotation needed — EF maps bool as non-nullable.
+      Files: `Models/User.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 2. Update the runtime DB path in `Program.cs`.
-      - Change the line  
-        `var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Data");`  
-        to  
-        `var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Database");`  
-      - The `Directory.CreateDirectory(dataDir)` call immediately after it stays unchanged — it will now create `Database\` if it doesn't exist.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Program.cs`
-      - Verify: `dotnet build` passes; `dotnet run` starts without DB errors and `/Product` loads data.
+- [ ] 2. Update `Data/DbSeeder.cs`: set demo.IsAdmin = false; add admin@scooters.bg / Admin123! user with IsAdmin=true. Guard with `if (!context.Users.Any(u => u.Email == "admin@scooters.bg"))`.
+      Files: `Data/DbSeeder.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 3. Update the design-time DB path in `AppDbContextFactory.cs`.
-      - Change  
-        `var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "Data");`  
-        to  
-        `var dataDir = Path.Combine(Directory.GetCurrentDirectory(), "Database");`  
-      - This factory is used only by `dotnet ef` CLI commands (migrations); it must match the new folder so future migrations work.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Data\AppDbContextFactory.cs`
-      - Verify: `dotnet build` passes. (Full EF migration tooling can be confirmed with `dotnet ef dbcontext info` from the project directory, but build passing is the minimum bar.)
+- [ ] 3. Edit `Controllers/AccountController.cs` → `SignInUser`: after claims list, add `if (user.IsAdmin) claims.Add(new Claim(ClaimTypes.Role, "Admin"));`.
+      Files: `Controllers/AccountController.cs`
+      Verify: `dotnet build` — Build succeeded.
 
----
+- [ ] 4. Edit `Program.cs`: change `AddAuthorization()` to `AddAuthorization(options => { options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin")); })`.
+      Files: `Program.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-## Task 2 — Session-based shopping cart
+- [ ] 5. Create `Models/OrderStatus.cs`: enum with Pending, Processing, Shipped, Delivered, Cancelled.
+      Files: `Models/OrderStatus.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 4. Enable session infrastructure in `Program.cs`.
-      - **After** `builder.Services.AddControllersWithViews()` add:
-        ```csharp
-        builder.Services.AddDistributedMemoryCache();   // in-process session store
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddSession(options =>
-        {
-            options.IdleTimeout = TimeSpan.FromMinutes(30);
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-        });
-        ```
-      - In the middleware pipeline, add `app.UseSession();` **after** `app.UseRouting()` and **before** `app.UseAuthentication()`.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Program.cs`
-      - Verify: `dotnet build` passes.
+- [ ] 6. Create `Models/Order.cs`: Id Guid, UserId Guid, User nav, CreatedAt DateTime, Status OrderStatus, FullName/Phone/Address/City strings with [Required][MaxLength], Total decimal, Items List<OrderItem>.
+      Files: `Models/Order.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 5. Create the `CartItem` model.
-      - New file `Models\CartItem.cs` in namespace `MVC.Intro.Models`:
-        ```csharp
-        namespace MVC.Intro.Models
-        {
-            public class CartItem
-            {
-                public Guid ProductId { get; set; }
-                public string Name { get; set; } = string.Empty;
-                public decimal Price { get; set; }
-                public string? ImageUrl { get; set; }
-                public int Quantity { get; set; }
-            }
-        }
-        ```
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Models\CartItem.cs`
-      - Verify: `dotnet build` passes.
+- [ ] 7. Create `Models/OrderItem.cs`: Id Guid, OrderId Guid, Order nav, ProductId Guid, ProductName string, UnitPrice decimal, Quantity int, [NotMapped] computed Subtotal property.
+      Files: `Models/OrderItem.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 6. Create `CartService` in `Services\CartService.cs`.
-      - Namespace `MVC.Intro.Services`. Uses `IHttpContextAccessor` and `System.Text.Json`.
-      - Session key constant: `private const string CartKey = "Cart";`
-      - Private helpers: `GetCart()` — deserializes `List<CartItem>` from session (returns empty list if missing); `SaveCart(List<CartItem>)` — serializes back.
-      - Public methods:
-        - `List<CartItem> GetCart()` — returns current cart items.
-        - `void AddItem(Product product)` — finds existing item by `ProductId` and increments `Quantity`, or adds new `CartItem` with `Quantity = 1`.
-        - `void RemoveItem(Guid productId)` — removes the item with matching `ProductId`.
-        - `void Clear()` — removes the `"Cart"` key from session.
-        - `decimal GetTotal()` — returns `cart.Sum(i => i.Price * i.Quantity)`.
-      - Inject `IHttpContextAccessor`; access session via `_httpContextAccessor.HttpContext!.Session`.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Services\CartService.cs`
-      - Verify: `dotnet build` passes.
+- [ ] 8. Create `Models/CheckoutViewModel.cs`: FullName/Phone/Address/City all [Required] with Bulgarian display names, Items List<CartItem>, Total decimal.
+      Files: `Models/CheckoutViewModel.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 7. Register `CartService` as scoped in `Program.cs`.
-      - Add `builder.Services.AddScoped<CartService>();` alongside the other `AddScoped` calls.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Program.cs`
-      - Verify: `dotnet build` passes.
+- [ ] 9. Edit `Data/AppDbContext.cs`: add DbSet<Order> and DbSet<OrderItem>. In OnModelCreating configure Order→User FK with DeleteBehavior.Restrict, cascade delete for OrderItems. Add `[NotMapped]` attribute to OrderItem.Subtotal or configure via Fluent.
+      Files: `Data/AppDbContext.cs`, `Models/OrderItem.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-- [ ] 8. Create `CartController`.
-      - New file `Controllers\CartController.cs`, namespace `MVC.Intro.Controllers`.
-      - Decorate with `[Route("[controller]/[action]")]` — same convention as `ProductController`.
-      - Constructor injects `CartService`.
-      - Actions:
-        - `[HttpGet] Index()` → passes `cartService.GetCart()` as model to `View()`, also puts `cartService.GetTotal()` in `ViewData["Total"]`.
-        - `[HttpPost] [ValidateAntiForgeryToken] AddToCart(Guid productId)` — looks up the product via a `ProductService` injection, calls `cartService.AddItem(product)`, redirects to `Product/Index`.
-        - `[HttpPost] [ValidateAntiForgeryToken] RemoveFromCart(Guid productId)` — calls `cartService.RemoveItem(productId)`, redirects to `Cart/Index`.
-        - `[HttpPost] [ValidateAntiForgeryToken] ClearCart()` — calls `cartService.Clear()`, redirects to `Cart/Index`.
-      - `ProductService` must also be injected (to look up the product in `AddToCart`).
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Controllers\CartController.cs`
-      - Verify: `dotnet build` passes.
+- [ ] 10. Run EF migration for IsAdmin: `dotnet ef migrations add AddIsAdminToUser --project c:\Users\Students\MVC\MVC\Scooters`
+      Files: `Migrations/` (new AddIsAdminToUser files + updated snapshot)
+      Verify: Migration files created, `dotnet build` — Build succeeded.
 
-- [ ] 9. Add "Добави в кошница" button to the product list view.
-      - In `Views\Product\Index.cshtml`, inside each card's `<div class="card-body">`, **after** the "Детайли" button, add:
-        ```html
-        <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
-            <input type="hidden" name="productId" value="@item.Id" />
-            <button type="submit" class="btn btn-sm btn-success">Добави в кошница</button>
-        </form>
-        ```
-      - No `[ValidateAntiForgeryToken]` token tag is needed in the form — the tag helper `asp-action` automatically injects `__RequestVerificationToken` when inside a `<form>` with `method="post"`.
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Views\Product\Index.cshtml`
-      - Verify: `dotnet build` passes; `/Product` page renders the new button per card.
-
-- [ ] 10. Create the Cart `Index` view.
-      - New file `Views\Cart\Index.cshtml`. Model is `IEnumerable<CartItem>` (already in `_ViewImports`).
-      - Layout: `@{ ViewData["Title"] = "Кошница"; Layout = "_Layout"; }`
-      - Content:
-        - `<h1>Кошница 🛒</h1>`
-        - If cart is empty: show a message "Кошницата е празна." and a link back to `/Product/Index`.
-        - If not empty: Bootstrap table with columns — Продукт, Снимка (thumbnail 60px), Цена, Брой, Сума, Изтрий.
-          - Each row's "Изтрий" cell: POST form to `Cart/RemoveFromCart` with hidden `productId`.
-          - Below the table: total row showing `ViewData["Total"]` formatted as `0.00 лв.`
-          - Two action buttons: "Изчисти кошницата" (POST form to `Cart/ClearCart`) and "Продължи пазаруването" link back to `Product/Index`.
-        - All POST forms include `@Html.AntiForgeryToken()` (or use `asp-action` tag helpers which inject it automatically).
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Views\Cart\` (new folder), `Views\Cart\Index.cshtml`
-      - Verify: `dotnet build` passes; navigating to `/Cart/Index` renders without errors.
-
-- [ ] 11. Add "Кошница 🛒" nav link to the layout.
-      - In `Views\Shared\_Layout.cshtml`, in the left `<ul class="navbar-nav flex-grow-1">`, add a new `<li>` after the "Тротинетки" item:
-        ```html
-        <li class="nav-item">
-            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cart" ? "active" : null)"
-               asp-controller="Cart" asp-action="Index">Кошница 🛒</a>
-        </li>
-        ```
-      - Files: `c:\Users\Students\MVC\MVC\MVC.Intro\Views\Shared\_Layout.cshtml`
-      - Verify: `dotnet build` passes; the navbar shows "Кошница 🛒" on every page and it becomes active when on the cart page.
+- [ ] 11. Run EF migration for Orders: `dotnet ef migrations add AddOrders --project c:\Users\Students\MVC\MVC\Scooters`
+      Files: `Migrations/` (new AddOrders files + updated snapshot)
+      Verify: Migration files created, `dotnet build` — Build succeeded.
 
 ---
 
-## Final smoke test
+## FEAT-002 — Checkout Flow + Client Panel
 
-After all items are complete, run `dotnet run` from the project directory and confirm:
+- [ ] 12. Edit `Controllers/CartController.cs`: inject AppDbContext, add `using` for System.Security.Claims, Scooters.Data, Microsoft.AspNetCore.Authorization, Microsoft.EntityFrameworkCore.
+      Files: `Controllers/CartController.cs`
+      Verify: `dotnet build` — Build succeeded.
 
-1. App starts without errors.
-2. `/Product` lists scooters; each card has "Добави в кошница".
-3. Clicking "Добави в кошница" adds the product and redirects back to `/Product`.
-4. `/Cart/Index` shows the item, correct price, and total.
-5. "Изтрий" removes the single item; "Изчисти кошницата" empties the whole cart.
-6. The "Кошница 🛒" nav link is visible and marks active on the cart page.
-7. DB file is at `Database\scooters.db` and data persists across restarts.
+- [ ] 13. Add GET /Cart/Checkout: [Authorize][HttpGet]. If cart empty → TempData["Error"] + redirect to Index. Build CheckoutViewModel (FullName from ClaimTypes.Name, Items=cart, Total). Return View.
+      Files: `Controllers/CartController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 14. Add POST /Cart/Checkout: [Authorize][HttpPost][ValidateAntiForgeryToken]. Validate model, create Order + OrderItems, SaveChangesAsync, ClearCart, redirect to OrderConfirmation(order.Id).
+      Files: `Controllers/CartController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 15. Add GET /Cart/OrderConfirmation/{id}: [Authorize][HttpGet]. Query Order with Items included, verify ownership (UserId == currentUser), return View(order).
+      Files: `Controllers/CartController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 16. Create `Views/Cart/Checkout.cshtml`: @model CheckoutViewModel. Two-column layout (col-md-7 form / col-md-5 order summary card). Form fields: FullName, Phone, Address, City with asp-for helpers + validation spans. Submit button "Потвърди поръчката" (btn-warning). Right column: items table + total. Include _ValidationScriptsPartial in @section Scripts.
+      Files: `Views/Cart/Checkout.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 17. Create `Views/Cart/OrderConfirmation.cshtml`: @model Order. Success alert with order number (Id.ToString()[..8]). Shipping info card. Items table (Продукт/Цена/Кол./Сума). Total. Links to Account/Orders and Product/Index.
+      Files: `Views/Cart/OrderConfirmation.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 18. Edit `Views/Cart/Index.cshtml`: add "Към плащане →" button (btn-warning) visible only to authenticated users, linking to Cart/Checkout.
+      Files: `Views/Cart/Index.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 19. Edit `Controllers/AccountController.cs`: add GET /Account/Orders [Authorize] — list current user's orders newest-first. Add GET /Account/Orders/{id} [Authorize] — detail with items, ownership check.
+      Files: `Controllers/AccountController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 20. Create `Views/Account/Orders.cshtml`: @model List<Order>. Title "Моите поръчки". Table: Номер/Дата/Статус badge/Сума/Детайли link. Status badge colors: Pending=secondary, Processing=primary, Shipped=info, Delivered=success, Cancelled=danger.
+      Files: `Views/Account/Orders.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 21. Create `Views/Account/OrderDetails.cshtml`: @model Order. Title "Поръчка #…". Status badge. Shipping info. Items table. Total. Back link.
+      Files: `Views/Account/OrderDetails.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+---
+
+## FEAT-003 — Admin Panel + Navigation
+
+- [ ] 22. Create `Models/UserSummaryViewModel.cs`: Id Guid, FullName/Email strings, IsAdmin bool, OrderCount int.
+      Files: `Models/UserSummaryViewModel.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 23. Create `Controllers/AdminController.cs`: [Authorize(Policy="AdminOnly")][Route("[controller]/[action]")]. Inject AppDbContext. Add GET Index action: aggregates (total orders, revenue, by-status counts), recent 5 orders. Pass all via ViewBag.
+      Files: `Controllers/AdminController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 24. Add GET Admin/Orders (paginated): page param, 20 per page, orders with User included, ordered by CreatedAt desc. ViewBag: Orders, CurrentPage, TotalPages.
+      Files: `Controllers/AdminController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 25. Add GET Admin/Orders/{id} (detail) and POST Admin/Orders/{id}/Status: detail includes Items + User; POST updates Status, saves, TempData["Success"], redirects.
+      Files: `Controllers/AdminController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 26. Add GET Admin/Products: returns all products. Add GET Admin/Users: projects to List<UserSummaryViewModel> with order count subquery.
+      Files: `Controllers/AdminController.cs`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 27. Create `Views/Admin/Index.cshtml`: 4 stat cards (Total orders, Revenue, Active, Delivered). Recent 5 orders table. All labels Bulgarian.
+      Files: `Views/Admin/Index.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 28. Create `Views/Admin/Orders.cshtml`: paginated table (Номер/Клиент/Дата/Статус badge/Сума/Действия). Prev/Next pagination controls.
+      Files: `Views/Admin/Orders.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 29. Create `Views/Admin/OrderDetails.cshtml`: @model Order. Shipping info, items table, status change form (select + POST to Admin/Orders/{id}/Status), status badge.
+      Files: `Views/Admin/OrderDetails.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 30. Create `Views/Admin/Products.cshtml`: @model List<Product>. Table with thumbnail, name, price, range, speed, Edit/Delete actions.
+      Files: `Views/Admin/Products.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 31. Create `Views/Admin/Users.cshtml`: @model List<UserSummaryViewModel>. Table: Имена/Имейл/Администратор badge/Поръчки count.
+      Files: `Views/Admin/Users.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 32. Edit `Views/Shared/_Layout.cshtml`: (a) Add `@inject Scooters.Services.CartService CartSvc` at top. (b) Update Cart nav-item to show count badge: `<span class="badge bg-warning text-dark">@(CartSvc.GetCart().Count)</span>`. (c) In authenticated nav block add "Моите поръчки" link to Account/Orders. (d) Add `@if (User.IsInRole("Admin"))` block with "Админ панел" link to Admin/Index.
+      Files: `Views/Shared/_Layout.cshtml`
+      Verify: `dotnet build` — Build succeeded.
+
+- [ ] 33. Final full build and smoke test: run `dotnet build`, confirm 0 errors; run `dotnet run` briefly to confirm startup and migration apply without exceptions.
+      Files: (none)
+      Verify: `dotnet build c:\Users\Students\MVC\MVC\Scooters\Scooters.csproj` → Build succeeded.

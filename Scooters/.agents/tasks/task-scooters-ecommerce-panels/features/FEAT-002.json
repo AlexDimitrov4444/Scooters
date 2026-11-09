@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Checkout flow and client panel. Depends on FEAT-001 (Order/OrderItem models and migrations must exist). Adds Checkout GET/POST to CartController, OrderConfirmation view, and Account/Orders + Account/Orders/{id} client panel views. Independent from FEAT-003 (admin panel).",
+  "status": "pending",
+  "steps": [
+    "1. Edit Controllers/CartController.cs: inject AppDbContext via constructor (add `private readonly AppDbContext _context;` and update constructor). Also inject IHttpContextAccessor to read UserId from User claims — actually User is available via Controller.User, so just use `User.FindFirstValue(ClaimTypes.NameIdentifier)` directly in actions.",
+    "2. Add `using` statements to CartController: System.Security.Claims, Scooters.Data, Scooters.Models, Microsoft.AspNetCore.Authorization.",
+    "3. Add GET /Cart/Checkout action to CartController: [HttpGet][Authorize]. Read cart via _cartService.GetCart(). If empty, redirect to Cart/Index with TempData[\"Error\"]=\"Кошницата е празна.\". Build CheckoutViewModel: pre-fill FullName from ClaimTypes.Name, leave Phone/Address/City empty, Items=cart, Total=_cartService.GetTotal(). Return View(vm).",
+    "4. Add POST /Cart/Checkout action to CartController: [HttpPost][Authorize][ValidateAntiForgeryToken]. Validate model. Get cart; if empty redirect. Parse userId from User.FindFirstValue(ClaimTypes.NameIdentifier). Create Order with new Guid, UserId, CreatedAt=DateTime.UtcNow, Status=OrderStatus.Pending, FullName/Phone/Address/City from model, Total=cart.Sum(i=>i.Price*i.Quantity). Create OrderItem for each cart item (ProductId, ProductName=Name, UnitPrice=Price, Quantity). Add Order to _context.Orders, SaveChangesAsync(). ClearCart(). Redirect to OrderConfirmation with order.Id.",
+    "5. Add GET /Cart/OrderConfirmation action to CartController: [HttpGet][Authorize]. Accepts Guid id. Query _context.Orders.Include(o=>o.Items).FirstOrDefaultAsync(o=>o.Id==id). Verify order.UserId == current user's id (else return Forbid()). Return View(order).",
+    "6. Create Views/Cart/Checkout.cshtml: @model CheckoutViewModel. Two-column Bootstrap 5 row. Left col (col-md-7): form with fields FullName, Phone, Address, City (each form-group with asp-for label+input+validation span). Right col (col-md-5): card 'Преглед на поръчката' — table of items (Продукт/Цена/Кол./Сума), total row, submit button 'Потвърди поръчката' (btn-warning btn-lg w-100). Include @section Scripts for validation scripts partial.",
+    "7. Create Views/Cart/OrderConfirmation.cshtml: @model Scooters.Models.Order. Show success alert 'Поръчката е приета!' with order number (first 8 chars of Id). Show shipping info card (FullName, Phone, Address, City). Show items table (Продукт/Цена/Кол./Сума). Show total. Link 'Моите поръчки' to Account/Orders and 'Продължи пазаруването' to Product/Index.",
+    "8. Edit Views/Cart/Index.cshtml: add a 'Към плащане' button after the existing buttons. If User.Identity.IsAuthenticated show `<a asp-controller=\"Cart\" asp-action=\"Checkout\" class=\"btn btn-warning\">Към плащане →</a>`, else show a login prompt button.",
+    "9. Add using directive in CartController for Microsoft.EntityFrameworkCore (for Include/FirstOrDefaultAsync).",
+    "10. Edit Controllers/AccountController.cs: inject AppDbContext (already injected — it's the same field). Add two actions: GET /Account/Orders [Authorize] — query _context.Orders.Where(o=>o.UserId==currentUserId).OrderByDescending(o=>o.CreatedAt).ToListAsync(), return View(orders). GET /Account/Orders/{id} [Authorize] — query with .Include(o=>o.Items), verify ownership, return View(order).",
+    "11. Create Views/Account/Orders.cshtml (list): @model List<Scooters.Models.Order>. Title 'Моите поръчки'. If empty show info alert. Else show Bootstrap table: columns Номер (first 8 of Id), Дата (CreatedAt formatted 'dd.MM.yyyy HH:mm'), Статус (badge per status color), Сума (Total.ToString('F2') + ' eur.'), Детайли (link to Account/Orders/{id}). Status badge colors: Pending=secondary, Processing=primary, Shipped=info, Delivered=success, Cancelled=danger.",
+    "12. Create Views/Account/OrderDetails.cshtml: @model Scooters.Models.Order. Title 'Поръчка #...' (first 8 of Id). Show status badge. Show shipping info card. Show items table (Продукт/Ед. цена/Кол./Сума). Show total. Show 'Назад' link to Account/Orders.",
+    "13. Run `dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj` — confirm Build succeeded."
+  ],
+  "acceptance_criteria": [
+    "dotnet build produces 0 errors",
+    "GET /Cart/Checkout redirects unauthenticated users to login",
+    "POST /Cart/Checkout creates Order+OrderItems, clears cart, redirects to OrderConfirmation",
+    "GET /Cart/OrderConfirmation/{id} shows order summary; returns 403 if wrong user",
+    "GET /Account/Orders lists current user's orders, newest first",
+    "GET /Account/Orders/{id} shows order detail with items and shipping info",
+    "Cart/Index has 'Към плащане' link for authenticated users",
+    "All views use Bulgarian labels and Bootstrap 5 classes"
+  ],
+  "verification": [
+    "dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj",
+    "Confirm output contains 'Build succeeded' with 0 errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,77 @@
+@model Scooters.Models.Order
+@{
+    ViewData["Title"] = "Детайли на поръчка";
+    var shortId = Model.Id.ToString().Substring(0, 8).ToUpper();
+    var (badgeClass, label) = Model.Status switch
+    {
+        Scooters.Models.OrderStatus.Pending    => ("secondary", "Изчакваща"),
+        Scooters.Models.OrderStatus.Processing => ("primary",   "В обработка"),
+        Scooters.Models.OrderStatus.Shipped    => ("info",      "Изпратена"),
+        Scooters.Models.OrderStatus.Delivered  => ("success",   "Доставена"),
+        Scooters.Models.OrderStatus.Cancelled  => ("danger",    "Отказана"),
+        _ => ("secondary", "Неизвестен")
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Поръчка <span class="text-muted">#@shortId</span></h2>
+    <span class="badge bg-@badgeClass fs-6">@label</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">🛒 Артикули</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Продукт</th>
+                            <th class="text-center">Кол.</th>
+                            <th class="text-end pe-3">Ед. цена</th>
+                            <th class="text-end pe-3">Сума</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-3">@item.ProductName</td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end pe-3">@item.UnitPrice.ToString("F2") €</td>
+                                <td class="text-end pe-3">@((item.UnitPrice * item.Quantity).ToString("F2")) €</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td colspan="3" class="ps-3 fw-bold">Общо</td>
+                            <td class="text-end pe-3 fw-bold">@Model.Total.ToString("F2") €</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">🚚 Доставка</div>
+            <div class="card-body">
+                <p class="mb-1"><strong>@Model.FullName</strong></p>
+                <p class="mb-1">📞 @Model.Phone</p>
+                <p class="mb-1">📍 @Model.Address</p>
+                <p class="mb-0">🏙 @Model.City</p>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">📅 Информация</div>
+            <div class="card-body">
+                <p class="mb-1 small text-muted">Дата на поръчка:</p>
+                <p class="mb-0">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-controller="Account" asp-action="Orders" class="btn btn-outline-secondary mt-3">← Всички поръчки</a>

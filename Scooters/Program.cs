@@ -58,8 +58,12 @@ namespace Scooters
                     options.Cookie.Name = "VoltRide.Auth";
                 });
 
-            // Регистрираме авторизация (проверка на права)
-            builder.Services.AddAuthorization();
+            // Регистрираме авторизация с политики за достъп
+            builder.Services.AddAuthorization(options =>
+            {
+                // Политика за достъп само за администратори
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            });
 
             // Изграждаме приложението
             var app = builder.Build();

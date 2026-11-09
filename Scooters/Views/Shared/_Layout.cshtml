@@ -7,7 +7,6 @@
     <title>@ViewData["Title"] - VoltRide</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MVC.Intro.styles.css" asp-append-version="true" />
 </head>
 <body>
     <a class="skip-link" href="#main">Към съдържанието</a>
@@ -30,13 +29,38 @@
                                asp-controller="Product" asp-action="Index">Тротинетки</a>
                         </li>
                         <li class="nav-item">
+                            @{
+                                var cartJson = Context.Session.GetString("Cart");
+                                var cartCount = 0;
+                                if (cartJson != null)
+                                {
+                                    var cartItems = System.Text.Json.JsonSerializer.Deserialize<List<Scooters.Models.CartItem>>(cartJson);
+                                    cartCount = cartItems?.Sum(i => i.Quantity) ?? 0;
+                                }
+                            }
                             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cart" ? "active" : null)"
-                               asp-controller="Cart" asp-action="Index">Кошница 🛒</a>
+                               asp-controller="Cart" asp-action="Index">
+                                Кошница 🛒
+                                @if (cartCount > 0)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">@cartCount</span>
+                                }
+                            </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Privacy" ? "active" : null)"
-                               asp-controller="Home" asp-action="Privacy">Поверителност</a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Account" && ViewContext.RouteData.Values["action"]?.ToString() == "Orders" ? "active" : null)"
+                                   asp-controller="Account" asp-action="Orders">📦 Моите поръчки</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : null)"
+                                   href="/Admin">⚙ Админ панел</a>
+                            </li>
+                        }
                     </ul>
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
@@ -46,6 +70,7 @@
                             </li>
                             <li class="nav-item">
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-outline-light btn-sm mt-1">Изход</button>
                                 </form>
                             </li>

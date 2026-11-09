@@ -1,4 +1,4 @@
-@model List<Scooters.Models.CartItem>
+﻿@model List<Scooters.Models.CartItem>
 @{
     ViewData["Title"] = "Кошница";
     var total = (decimal)(ViewData["Total"] ?? 0m);
@@ -50,11 +50,12 @@ else
         </tfoot>
     </table>
 
-    <div class="d-flex gap-2 mt-3">
+    <div class="d-flex gap-2 mt-3 flex-wrap">
         <form asp-controller="Cart" asp-action="ClearCart" method="post">
             @Html.AntiForgeryToken()
             <button type="submit" class="btn btn-outline-danger">🗑 Изчисти кошницата</button>
         </form>
         <a asp-controller="Product" asp-action="Index" class="btn btn-primary">← Продължи пазаруването</a>
+        <a asp-controller="Cart" asp-action="Checkout" class="btn btn-success btn-lg ms-auto">✅ Завърши поръчката</a>
     </div>
 }

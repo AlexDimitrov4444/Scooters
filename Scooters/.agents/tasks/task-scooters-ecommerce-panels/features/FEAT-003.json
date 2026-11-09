@@ -1,0 +1,45 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Admin panel and navigation update. Depends on FEAT-001 (AdminOnly policy, Order models) and FEAT-002 (orders exist). Creates AdminController with dashboard, orders management, products list, and users list. Updates _Layout.cshtml with cart badge, Моите поръчки link, and Админ панел link. Independent of FEAT-002's checkout UI but depends on Order/User models from FEAT-001.",
+  "status": "pending",
+  "steps": [
+    "1. Create Controllers/AdminController.cs with class-level [Authorize(Policy=\"AdminOnly\")] and [Route(\"[controller]/[action]\")] attributes. Inject AppDbContext via constructor. Add using statements: Microsoft.AspNetCore.Authorization, Microsoft.AspNetCore.Mvc, Microsoft.EntityFrameworkCore, Scooters.Data, Scooters.Models, System.Security.Claims.",
+    "2. Add GET /Admin (Index action, [HttpGet]) to AdminController: query total orders count, total revenue (sum of Order.Total where Status != Cancelled), orders by status (group by Status), recent 5 orders (include User, order by CreatedAt desc). Pass via ViewBag: TotalOrders, TotalRevenue, OrdersByStatus (Dictionary<OrderStatus,int>), RecentOrders (List<Order>). Return View().",
+    "3. Add GET /Admin/Orders (paginated list) to AdminController: accept int page=1. Query all orders with .Include(o=>o.User), order by CreatedAt desc, skip/take 20 per page. Pass via ViewBag: CurrentPage, TotalPages (ceil(count/20)), Orders. Return View().",
+    "4. Add GET /Admin/Orders/{id} (order detail) to AdminController: [HttpGet(\"{id}\")] or route parameter. Query order with .Include(o=>o.Items).Include(o=>o.User). If null return NotFound(). Pass a simple anonymous ViewModel or use ViewBag for the status options (all OrderStatus values). Return View(order).",
+    "5. Add POST /Admin/Orders/{id}/Status to AdminController: [HttpPost(\"{id}/Status\")][ValidateAntiForgeryToken]. Accept Guid id, OrderStatus status. Find order, set order.Status=status, SaveChangesAsync(). TempData[\"Success\"]=\"Статусът е обновен.\". Redirect to Admin/Orders/{id}.",
+    "6. Add GET /Admin/Products to AdminController: query all products (reuse _context.Products.ToListAsync()). Return View(products).",
+    "7. Add GET /Admin/Users to AdminController: query users with order counts — use _context.Users.Select(u => new { u.Id, u.FullName, u.Email, u.IsAdmin, OrderCount = _context.Orders.Count(o => o.UserId == u.Id) }).ToListAsync(). Return View with this anonymous projection — use a dynamic or create a simple UserSummaryViewModel inner class.",
+    "8. Create UserSummaryViewModel.cs in Models/: Id Guid, FullName string, Email string, IsAdmin bool, OrderCount int. Namespace Scooters.Models.",
+    "9. Revisit step 7: use UserSummaryViewModel instead of anonymous type.",
+    "10. Create Views/Admin/ directory. Create Views/Admin/Index.cshtml: @{ ViewData[\"Title\"] = \"Админ панел\"; } Show 4 Bootstrap stat cards (col-md-3 each): Общо поръчки, Приходи (eur.), Активни поръчки (Pending+Processing+Shipped count), Доставени (Delivered count). Below: table of recent 5 orders (Номер/Клиент/Дата/Статус badge/Сума). Link 'Всички поръчки'.",
+    "11. Create Views/Admin/Orders.cshtml: @model-less view using ViewBag. Title 'Всички поръчки'. Paginated Bootstrap table: Номер (first 8 chars), Клиент (User.FullName + Email), Дата, Статус badge, Сума, Действия (Details link). Pagination: prev/next links using page param.",
+    "12. Create Views/Admin/OrderDetails.cshtml: @model Scooters.Models.Order. Title 'Поръчка #...'. Show shipping info, items table, total. Show status change form: <select name='status'> with all OrderStatus values as <option>, submit POST to /Admin/Orders/{id}/Status with anti-forgery token. Show current status badge.",
+    "13. Create Views/Admin/Products.cshtml: @model List<Scooters.Models.Product>. Title 'Продукти — Администрация'. Bootstrap table: Снимка (small img 50px), Модел, Цена, Пробег, Макс. скорост, Действия (Edit link to /Product/Edit/{id}, Delete form with confirm). This is an admin view of the same product data.",
+    "14. Create Views/Admin/Users.cshtml: @model List<Scooters.Models.UserSummaryViewModel>. Title 'Потребители'. Bootstrap table: Имена, Имейл, Администратор (badge Yes/No), Поръчки (count badge).",
+    "15. Edit Views/Shared/_Layout.cshtml: (a) In the left navbar-nav ul, update the Cart nav-item to show an item count badge. Read cart count using a try/catch or null-check on IHttpContextAccessor — actually inject CartService via @inject CartService CartSvc at the top of _Layout. Show `<span class=\"badge bg-warning text-dark\">@CartSvc.GetCart().Count</span>` after 'Кошница 🛒'. (b) In the authenticated user's nav section (right ul), add a new nav-item before the logout form: `<a class=\"nav-link\" asp-controller=\"Account\" asp-action=\"Orders\">Моите поръчки</a>`. (c) Also in the authenticated section, add an Admin nav-item visible only when User.IsInRole(\"Admin\"): `<a class=\"nav-link\" asp-controller=\"Admin\" asp-action=\"Index\">Админ панел</a>`.",
+    "16. In Views/_ViewImports.cshtml: verify `@inject Scooters.Services.CartService CartSvc` is usable in _Layout. Actually _ViewImports applies to Views/ not Shared/ directly for inject in layout — instead, inject CartService directly in _Layout.cshtml with `@inject Scooters.Services.CartService CartSvc` at the top of the file.",
+    "17. Run `dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj` — confirm Build succeeded with 0 errors."
+  ],
+  "acceptance_criteria": [
+    "dotnet build produces 0 errors",
+    "AdminController class is decorated with [Authorize(Policy=\"AdminOnly\")]",
+    "GET /Admin returns dashboard view with stat cards",
+    "GET /Admin/Orders returns paginated order list",
+    "GET /Admin/Orders/{id} returns order detail with status change form",
+    "POST /Admin/Orders/{id}/Status updates order status and redirects",
+    "GET /Admin/Products lists all products with Edit/Delete actions",
+    "GET /Admin/Users lists users with IsAdmin flag and order count",
+    "Views/Admin/ directory contains Index, Orders, OrderDetails, Products, Users views",
+    "_Layout.cshtml shows 'Моите поръчки' for authenticated users",
+    "_Layout.cshtml shows 'Админ панел' only for admin users (User.IsInRole('Admin'))",
+    "Cart link in navbar shows item count badge"
+  ],
+  "verification": [
+    "dotnet build c:\\Users\\Students\\MVC\\MVC\\Scooters\\Scooters.csproj",
+    "Confirm output contains 'Build succeeded' with 0 errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

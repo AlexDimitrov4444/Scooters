@@ -1,0 +1,108 @@
+﻿@model Scooters.Models.Order
+@{
+    ViewData["Title"] = "Детайли на поръчка";
+    var shortId = Model.Id.ToString().Substring(0, 8).ToUpper();
+    var (bc, lbl) = Model.Status switch
+    {
+        Scooters.Models.OrderStatus.Pending    => ("secondary", "Изчакваща"),
+        Scooters.Models.OrderStatus.Processing => ("primary",   "В обработка"),
+        Scooters.Models.OrderStatus.Shipped    => ("info",      "Изпратена"),
+        Scooters.Models.OrderStatus.Delivered  => ("success",   "Доставена"),
+        Scooters.Models.OrderStatus.Cancelled  => ("danger",    "Отказана"),
+        _                                      => ("secondary", "Неизвестен")
+    };
+}
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="/Admin" class="btn btn-outline-secondary btn-sm">🏠 Дашборд</a>
+    <a asp-controller="Admin" asp-action="Orders"   class="btn btn-dark btn-sm">📋 Поръчки</a>
+    <a asp-controller="Admin" asp-action="Products" class="btn btn-outline-secondary btn-sm">📦 Продукти</a>
+    <a asp-controller="Admin" asp-action="Users"    class="btn btn-outline-secondary btn-sm">👥 Потребители</a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Поръчка <span class="text-muted">#@shortId</span></h2>
+    <span class="badge bg-@bc fs-6">@lbl</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">🛒 Артикули</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Продукт</th>
+                            <th class="text-center">Кол.</th>
+                            <th class="text-end">Ед. цена</th>
+                            <th class="text-end pe-3">Сума</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-3">@item.ProductName</td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.UnitPrice.ToString("F2") €</td>
+                                <td class="text-end pe-3">@((item.UnitPrice * item.Quantity).ToString("F2")) €</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td colspan="3" class="ps-3 fw-bold">Общо</td>
+                            <td class="text-end pe-3 fw-bold">@Model.Total.ToString("F2") €</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">🚚 Доставка</div>
+            <div class="card-body">
+                <p class="mb-1"><strong>@Model.FullName</strong></p>
+                <p class="mb-1">📞 @Model.Phone</p>
+                <p class="mb-1">📍 @Model.Address</p>
+                <p class="mb-0">🏙 @Model.City</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">📋 Промени статус</div>
+            <div class="card-body">
+                <form asp-controller="Admin" asp-action="UpdateStatus" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    @{
+                        var statusOptions = new SelectList(new[]
+                        {
+                            new { Value = "Pending",    Text = "Изчакваща"   },
+                            new { Value = "Processing", Text = "В обработка" },
+                            new { Value = "Shipped",    Text = "Изпратена"   },
+                            new { Value = "Delivered",  Text = "Доставена"   },
+                            new { Value = "Cancelled",  Text = "Отказана"    },
+                        }, "Value", "Text", Model.Status.ToString());
+                    }
+                    @Html.DropDownList("status", statusOptions, new { @class = "form-select mb-2" })
+                    <button type="submit" class="btn btn-primary w-100">Запази</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">👤 Клиент</div>
+            <div class="card-body">
+                <p class="mb-1"><strong>@(Model.User?.FullName ?? "—")</strong></p>
+                <p class="mb-0 text-muted small">@(Model.User?.Email ?? "—")</p>
+                <p class="mb-0 mt-2 small text-muted">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-controller="Admin" asp-action="Orders" class="btn btn-outline-secondary mt-3">← Всички поръчки</a>
+
