@@ -43,8 +43,8 @@ namespace Scooters.Controllers
         }
 
         // GET /Product/Create — показва формата за добавяне на нов продукт
-        // [Authorize] — само влезли потребители имат достъп
-        [Authorize]
+        // [Authorize(Policy = "AdminOnly")] — само влезли потребители имат достъп
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public IActionResult Create()
         {
@@ -52,7 +52,7 @@ namespace Scooters.Controllers
         }
 
         // POST /Product/Create — обработва изпратената форма за нов продукт
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken] // Защита срещу CSRF атаки
         public async Task<IActionResult> Create(Product product, IFormFile? imageFile)
@@ -74,7 +74,7 @@ namespace Scooters.Controllers
         }
 
         // GET /Product/Edit/{id} — показва формата за редактиране на продукт
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("{id}")]
         public async Task<IActionResult> Edit(Guid id)
         {
@@ -88,7 +88,7 @@ namespace Scooters.Controllers
         }
 
         // POST /Product/Edit/{id} — записва промените по продукта
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, Product product, IFormFile? imageFile)
@@ -124,7 +124,7 @@ namespace Scooters.Controllers
 
         // POST /Product/UploadImage/{id} — качва само снимката на продукт (от Home страницата)
         // Използва се от бутона "📷 Смени снимка" върху картите
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadImage(Guid id, IFormFile? imageFile)
@@ -152,7 +152,7 @@ namespace Scooters.Controllers
         }
 
         // POST /Product/Delete — изтрива продукт по ID
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(Guid id)
@@ -188,3 +188,4 @@ namespace Scooters.Controllers
         }
     }
 }
+

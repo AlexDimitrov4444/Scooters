@@ -33,7 +33,7 @@
                 </dl>
 
                 <a class="btn btn-dark mt-4" asp-action="Index">Назад към каталога</a>
-                @if (User.Identity?.IsAuthenticated == true)
+                @if (User.IsInRole("Admin"))
                 {
                     <a class="btn btn-warning mt-4 ms-2"
                        asp-action="Edit" asp-route-id="@Model.Id">Редакция</a>
@@ -42,3 +42,4 @@
         </div>
     </div>
 </div>
+

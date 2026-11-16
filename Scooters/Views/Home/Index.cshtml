@@ -9,17 +9,16 @@
     <div class="hero-copy">
         <p class="hero-kicker">Електрическа мобилност</p>
         <h1>VoltRide — електрически тротинетки за града</h1>
-        <p class="lead">Леки, бързи и готови за ежедневието. Разгледайте каталога или влезте, за да добавяте модели.</p>
+        <p class="lead">Леки, бързи и готови за ежедневието. Разгледайте каталога или влезте в профила си.</p>
 
         <a class="btn btn-warning btn-lg me-2" asp-controller="Product" asp-action="Index">Каталог</a>
-
-        @if (User.Identity?.IsAuthenticated != true)
+        @if (User.IsInRole("Admin"))
+        {
+            <a class="btn btn-outline-light btn-lg" asp-controller="Product" asp-action="Create">+ Добави модел</a>
+        }
+        else if (User.Identity?.IsAuthenticated != true)
         {
             <a class="btn btn-outline-light btn-lg" asp-controller="Account" asp-action="Login">Вход</a>
-        }
-        else
-        {
-            <a class="btn btn-outline-light btn-lg" asp-controller="Product" asp-action="Create">Добави модел</a>
         }
 
         <div class="hero-stats">
@@ -44,7 +43,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 mb-0">Популярни модели</h2>
-    <a asp-controller="Product" asp-action="Index">Виж всички</a>
+    <a asp-controller="Product" asp-action="Index">Виж всички →</a>
 </div>
 
 @if (!products.Any())
@@ -52,15 +51,7 @@
     <div class="empty-state">
         <p class="mb-2 fs-1">🛴</p>
         <h3 class="h5">Все още няма модели</h3>
-        <p class="text-muted mb-3">Добавете първата тротинетка, за да започне каталогът.</p>
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <a class="btn btn-warning" asp-controller="Product" asp-action="Create">Добави модел</a>
-        }
-        else
-        {
-            <a class="btn btn-outline-dark" asp-controller="Account" asp-action="Login">Влез, за да добавяш</a>
-        }
+        <p class="text-muted mb-3">Администраторът все още не е добавил продукти.</p>
     </div>
 }
 else
@@ -80,14 +71,14 @@ else
                             <div class="scooter-visual h-100">🛴</div>
                         }
 
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (User.IsInRole("Admin"))
                         {
                             <form asp-controller="Product" asp-action="UploadImage" asp-route-id="@item.Id"
                                   method="post" enctype="multipart/form-data"
                                   class="image-upload-btn">
                                 @Html.AntiForgeryToken()
                                 <label>
-                                    Смени снимка
+                                    📷 Смени снимка
                                     <input type="file" name="imageFile" accept="image/jpeg,image/png,image/webp,image/gif"
                                            class="d-none js-auto-submit" />
                                 </label>
@@ -95,7 +86,7 @@ else
                         }
                     </div>
 
-                    <div class="card-body">
+                    <div class="card-body d-flex flex-column">
                         <h3 class="h5">@item.Name</h3>
                         <p class="text-muted small">@item.Description</p>
                         <p class="price-tag mb-1">@item.Price.ToString("0.00") eur.</p>
@@ -103,13 +94,20 @@ else
                             <span class="spec-badge">@item.RangeKm км</span>
                             <span class="spec-badge">@item.MaxSpeedKmh км/ч</span>
                         </p>
-                        <a class="btn btn-sm btn-dark me-1"
-                           asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <a class="btn btn-sm btn-warning"
-                               asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">Редакция</a>
-                        }
+                        <div class="mt-auto d-flex flex-wrap gap-1">
+                            <a class="btn btn-sm btn-dark"
+                               asp-controller="Product" asp-action="Details" asp-route-id="@item.Id">Детайли</a>
+                            <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
+                                <input type="hidden" name="productId" value="@item.Id" />
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-warning">🛒</button>
+                            </form>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a class="btn btn-sm btn-outline-primary"
+                                   asp-controller="Product" asp-action="Edit" asp-route-id="@item.Id">✏</a>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
